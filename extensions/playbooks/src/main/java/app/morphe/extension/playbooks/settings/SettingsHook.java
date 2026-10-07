@@ -29,6 +29,9 @@ import app.morphe.extension.playbooks.fonts.FontVariant;
  * enum of item ids) plus a map from item id to item. A node with an unused id is appended to the
  * reading category, and that id is mapped to a second instance of the "About Google Play Books" row.
  * The patched row asks this class for its title, subtitle and click action.
+ *
+ * <p>Every screen gets its own copy of the map from Dagger, and looks items up with a call that throws
+ * for missing ids. So every class that reads the map passes it through {@link #registerFontItem(Map)}.
  */
 @SuppressWarnings({"unused", "rawtypes", "unchecked"})
 public final class SettingsHook {
@@ -46,10 +49,17 @@ public final class SettingsHook {
     private SettingsHook() {
     }
 
-    /** Injected where the settings item map is created. */
-    public static Map registerFontItem(Object treeRoot, Map items) {
+    /** Root of the static settings tree. Replaced by the patch with a read of the tree field. */
+    static Object treeRoot() {
+        return null;
+    }
+
+    /** Injected at the start of the constructors of every class that reads the settings item map. */
+    public static Map registerFontItem(Map items) {
         try {
+            Object treeRoot = treeRoot();
             if (treeRoot == null || items == null || items.isEmpty()) return items;
+            if (fontKey != null && FONT_ROWS.contains(items.get(fontKey))) return items;
 
             Enum<?> anyKey = (Enum<?>) items.keySet().iterator().next();
             Enum<?>[] keys = anyKey.getDeclaringClass().getEnumConstants();

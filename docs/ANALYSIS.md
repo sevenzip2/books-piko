@@ -54,10 +54,15 @@
 
 Play 북 설정 화면은 Compose로 되어 있습니다. 구성은 다음과 같습니다.
 - 정적 트리 `ajft.a`: `CategoryNode`/`ItemNode`이고, 클래스 이름이 난독화되지 않았습니다. 노드는 enum `ajfr` 값을 가리킵니다. enum 값의 이름(`READING_CATEGORY`, `ABOUT_PLAY_BOOKS` 등)은 남아 있습니다.
-- Dagger가 만든 `Map<ajfr, 항목>`: `ajfy.a()`에서 설정 화면으로 넘어갑니다.
+- Dagger가 만든 `Map<ajfr, 항목>`: 화면마다 따로 받습니다. `ajfx`(항목 레지스트리, `ajfy.a()`에서 생성), `ajhu`(목록 모델), `ajhr`(화면)가 각각 `beya.a()`로 새 Map을 받습니다.
+  세 곳 모두 `MapsKt.getValue`로 항목을 꺼내므로, Map에 없는 id가 트리에 있으면 `NoSuchElementException`으로 앱이 종료됩니다.
 
 "사용자 글꼴" 항목은 이렇게 넣습니다.
-1. `ajfy.a()`에서 Map을 받은 직후 `SettingsHook.registerFontItem(트리, Map)`을 호출합니다.
+1. Map을 읽는 클래스의 생성자 맨 앞에서 `SettingsHook.registerFontItem(Map)`으로 Map 인자를 바꿉니다.
+   - Map을 읽는 클래스는 이렇게 찾습니다. `getValue(Map, Object)` 호출 바로 뒤에 설정 항목 타입(`ajfq`와 그 하위 인터페이스 `ajfl`, `ajfn`)으로 캐스팅하는 클래스입니다.
+     항목 타입과 `getValue`는 레지스트리 클래스(`ajfx`)에서 읽어 옵니다. 이 버전에서는 `ajfx`, `ajhu`, `ajhr` 세 곳입니다.
+   - 처음에는 `ajfy.a()` 한 곳만 바꿨습니다. 그래서 Ebook reading 화면(`ajhu`/`ajhr`의 Map)에서 새 id를 찾지 못해 앱이 종료됐습니다.
+   - 트리 루트는 패치가 `SettingsHook.treeRoot()` 본문을 `sget-object ajft->a`로 바꿔서 넘깁니다.
    - 트리와 Map 어디에도 쓰이지 않는 enum 값을 하나 고릅니다. 이 버전에서는 `GENERAL_HEADER`이고, 앱 코드 어디서도 참조하지 않습니다.
    - `READING_CATEGORY` 노드의 자식 목록 끝에 그 값의 `ItemNode`를 추가합니다.
    - Map에는 그 값으로 "Google Play 북 정보" 행 클래스의 새 인스턴스를 넣습니다.

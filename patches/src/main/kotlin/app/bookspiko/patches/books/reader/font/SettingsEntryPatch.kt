@@ -10,12 +10,29 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 private const val SETTINGS_HOOK = "$EXTENSION_PACKAGE/settings/SettingsHook;"
+
+/** The `getValue(Map, key)` style static call, if [instruction] is one. */
+private fun mapLookup(instruction: Instruction): MethodReference? {
+    if (instruction.opcode != Opcode.INVOKE_STATIC) return null
+    val reference = (instruction as ReferenceInstruction).reference as MethodReference
+    if (reference.returnType != "Ljava/lang/Object;") return null
+    if (reference.parameterTypes.map { it.toString() } != listOf("Ljava/util/Map;", "Ljava/lang/Object;")) return null
+    return reference
+}
+
+/** Type of the first check-cast within a few instructions after [index]. */
+private fun castAfter(instructions: List<Instruction>, index: Int): String? =
+    instructions.subList(index + 1, minOf(index + 5, instructions.size))
+        .firstOrNull { it.opcode == Opcode.CHECK_CAST }
+        ?.let { ((it as ReferenceInstruction).reference as TypeReference).type }
 
 private fun requireNibble(register: Int, what: String) {
     if (register > 15) throw PatchException("$what uses register v$register, which needs a range invoke")
@@ -33,21 +50,69 @@ context(context: BytecodePatchContext)
 internal fun addFontSettingsEntry() {
     // region Register the row.
 
-    SettingsItemsProviderFingerprint.match().let { match ->
-        val method = match.method
-        val root = match.instructionMatches[0].getInstruction<OneRegisterInstruction>().registerA
-        val mapResult = match.instructionMatches[2]
-        val map = mapResult.getInstruction<OneRegisterInstruction>().registerA
-        requireNibble(root, "Settings tree")
-        requireNibble(map, "Settings map")
+    // The extension reads the static settings tree through SettingsHook.treeRoot().
+    val itemsProvider = SettingsItemsProviderFingerprint.match()
+    val treeField = itemsProvider.instructionMatches[0].getInstruction<ReferenceInstruction>().reference as FieldReference
+    context.mutableClassDefBy(SETTINGS_HOOK).methods.single { it.name == "treeRoot" }.addInstructions(
+        0,
+        """
+            sget-object v0, ${treeField.definingClass}->${treeField.name}:${treeField.type}
+            return-object v0
+        """,
+    )
 
-        method.addInstructions(
-            mapResult.index + 1,
-            """
-                invoke-static { v$root, v$map }, $SETTINGS_HOOK->registerFontItem(Ljava/lang/Object;Ljava/util/Map;)Ljava/util/Map;
-                move-result-object v$map
-            """,
-        )
+    // Each settings screen gets its own copy of the item map from Dagger and looks items up with
+    // getValue(), which throws for missing ids. Every class that reads items from such a map
+    // (getValue followed by a cast to a settings item type) must get the map with the row added.
+    val registryClass = (itemsProvider.instructionMatches[3].getInstruction<ReferenceInstruction>().reference as MethodReference).definingClass
+    val (getValue, itemType) = context.mutableClassDefBy(registryClass).methods.firstNotNullOfOrNull { method ->
+        val instructions = method.implementation?.instructions?.toList() ?: return@firstNotNullOfOrNull null
+        instructions.withIndex().firstNotNullOfOrNull { (index, instruction) ->
+            mapLookup(instruction)?.let { lookup -> castAfter(instructions, index)?.let { lookup to it } }
+        }
+    } ?: throw PatchException("Settings item lookup not found in $registryClass")
+
+    val itemTypes = mutableSetOf(itemType)
+    context.classDefForEach { classDef ->
+        if (itemType in classDef.interfaces) itemTypes += classDef.type
+    }
+
+    val mapReaders = mutableListOf<String>()
+    context.classDefForEach { classDef ->
+        val readsItems = classDef.methods.any { method ->
+            val instructions = method.implementation?.instructions?.toList() ?: return@any false
+            instructions.withIndex().any { (index, instruction) ->
+                mapLookup(instruction) == getValue && castAfter(instructions, index) in itemTypes
+            }
+        }
+        if (readsItems) mapReaders += classDef.type
+    }
+    if (registryClass !in mapReaders || mapReaders.size < 2) {
+        throw PatchException("Unexpected settings item map readers: $mapReaders")
+    }
+
+    mapReaders.forEach { type ->
+        val constructors = context.mutableClassDefBy(type).methods.filter { method ->
+            method.name == "<init>" && method.parameterTypes.any { it.toString() == "Ljava/util/Map;" }
+        }
+        if (constructors.isEmpty()) throw PatchException("No constructor taking the settings item map in $type")
+
+        constructors.forEach { constructor ->
+            var register = 1 // p0 is this.
+            constructor.parameterTypes.forEach { parameter ->
+                val name = parameter.toString()
+                if (name == "Ljava/util/Map;") {
+                    constructor.addInstructions(
+                        0,
+                        """
+                            invoke-static/range { p$register .. p$register }, $SETTINGS_HOOK->registerFontItem(Ljava/util/Map;)Ljava/util/Map;
+                            move-result-object p$register
+                        """,
+                    )
+                }
+                register += if (name == "J" || name == "D") 2 else 1
+            }
+        }
     }
 
     // endregion
