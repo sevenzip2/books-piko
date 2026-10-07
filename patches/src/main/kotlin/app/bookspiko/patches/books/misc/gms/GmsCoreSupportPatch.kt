@@ -152,7 +152,7 @@ val gmsCoreSupportPatch = bytecodePatch(
                 filledNewArray,
             )
 
-            // Request GET_ACCOUNTS and warn when GmsCore is missing or frozen.
+            // Request the GET_ACCOUNTS runtime permission GmsCore requires to list accounts.
             val superIndex = instructions.indexOfFirst { instruction ->
                 (instruction.opcode == Opcode.INVOKE_SUPER || instruction.opcode == Opcode.INVOKE_SUPER_RANGE) &&
                     ((instruction as ReferenceInstruction).reference as MethodReference).name == "onResume"

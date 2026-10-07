@@ -50,17 +50,6 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
 NPatch 같은 도구를 함께 쓸 때는 전체 **MicroG/GMS redirect를 꺼야** 합니다. 필요한 경로는 이 패치가 직접 리디렉션합니다.
 전체 리디렉션을 켜면 GmsCore에 없거나 동작이 다른 서비스까지 넘어가서 초기화가 깨집니다.
 
-### Onyx BOOX 사용자
-
-BOOX의 자동 동결(Auto Freeze)이 GmsCore를 비활성화하면
-`Failed to find provider info for app.revanced.android.gms.auth.accounts` 오류가 납니다.
-
-- 앱 관리에서 GmsCore를 **자동 동결 대상에서 제외**하고 **백그라운드 실행을 허용**하세요.
-- 복구: `adb shell pm enable --user 0 app.revanced.android.gms`
-- 테스트 중에는 `am force-stop app.revanced.android.gms`를 피하세요. 자동 동결이 다시 걸릴 수 있습니다.
-
-패치된 앱은 GmsCore가 없거나 동결돼 있으면 시작할 때 안내 대화상자를 띄웁니다.
-
 ## 사용자 글꼴
 
 - 런처의 **Books 글꼴**에서 기본(Regular) 글꼴을 고릅니다. 굵게/기울임/굵은 기울임 글꼴은 선택 사항입니다.

@@ -15,7 +15,6 @@
 | `GET_ACCOUNTS`의 `maxSdkVersion="22"` 제거 | Android 13에서 권한이 요청되지 않아 GmsCore가 계정을 돌려주지 않음 |
 | `<queries>`에 `app.revanced.android.gms` 패키지와 `…auth.accounts` provider 추가 | 패키지 가시성 |
 | `app.revanced.android.gms.SPOOFED_PACKAGE_NAME` / `…SIGNATURE` meta-data | GmsCore가 원래 앱으로 위장해 OAuth 수행 |
-| `app.bookspiko.GMSCORE_PACKAGE` / `…ACCOUNT_TYPE` meta-data | extension이 읽음 |
 
 ### 바이트코드
 
@@ -32,7 +31,7 @@
 | `AddAccountFingerprint` | `oyj.f` | `"introMessage"`, `AccountManager.addAccount` | addAccount type |
 | `OneGoogleAddAccountClickFingerprint` | `assd.onClick` | `"ACCOUNT_MANAGER"`, `"ADD_ACCOUNT_ACTIVITY"` | addAccount type |
 | `BaseBooksActivityOnActivityResultFingerprint` | `pir.onActivityResult` | `"authAccount"`, `new Account` | 선택 결과 계정 타입 |
-| `BaseBooksActivityOnResumeFingerprint` | `pir.onResume` | `"GMSCore check: unresolvable error %s"`, `"login_hint"` | 계정 선택기 허용 타입. `super.onResume()` 뒤에 GET_ACCOUNTS 요청과 GmsCore 설치·동결 확인 호출 삽입 |
+| `BaseBooksActivityOnResumeFingerprint` | `pir.onResume` | `"GMSCore check: unresolvable error %s"`, `"login_hint"` | 계정 선택기 허용 타입. `super.onResume()` 뒤에 GET_ACCOUNTS 런타임 권한 요청 삽입 |
 | `BaseBooksActivityAccountFromIntentFingerprint` | `pir.v(Intent)` | `"authAccount"`, `"email"`, `Account.<init>` | AccountData에서 만든 계정 타입 |
 | `AppSingletonGetAccountComponentFingerprint` | `AppSingleton.getAccountComponent(Account)` | 난독화되지 않은 이름 | 맨 앞에서 `(email, com.google)`을 `(email, app.revanced)`로 바꿈. 계정 컴포넌트 캐시 키가 Account 전체여서 생기는 `multiple DataStores active for the same file` 크래시를 막음 |
 

@@ -5,9 +5,6 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.resourcePatch
 import org.w3c.dom.Element
 
-internal const val GMSCORE_PACKAGE_META_DATA = "app.bookspiko.GMSCORE_PACKAGE"
-internal const val GMSCORE_ACCOUNT_TYPE_META_DATA = "app.bookspiko.GMSCORE_ACCOUNT_TYPE"
-
 /**
  * Manifest changes required for GmsCore sign-in. The package name of the app is kept.
  */
@@ -65,18 +62,6 @@ internal fun gmsCoreSupportResourcePatch(
                 "meta-data",
                 "android:name" to "$vendor.android.gms.SPOOFED_PACKAGE_SIGNATURE",
                 "android:value" to spoofedSignatureOption.value!!,
-            )
-
-            // Read by the extension.
-            application.child(
-                "meta-data",
-                "android:name" to GMSCORE_PACKAGE_META_DATA,
-                "android:value" to gmsCorePackage,
-            )
-            application.child(
-                "meta-data",
-                "android:name" to GMSCORE_ACCOUNT_TYPE_META_DATA,
-                "android:value" to vendor,
             )
         }
     }
