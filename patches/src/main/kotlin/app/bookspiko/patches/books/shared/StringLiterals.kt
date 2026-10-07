@@ -67,10 +67,6 @@ internal val filledNewArray = LiteralSink { instruction, register ->
         register in instruction.registersUsed
 }
 
-internal val instanceFieldStore = LiteralSink { instruction, register ->
-    instruction.opcode == Opcode.IPUT_OBJECT && (instruction as TwoRegisterInstruction).registerA == register
-}
-
 internal val accountConstructorType = methodArgument("Landroid/accounts/Account;", "<init>", 2)
 
 internal val stringEquals = methodArgument("Ljava/lang/String;", "equals")

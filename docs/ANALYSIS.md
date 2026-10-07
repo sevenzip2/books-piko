@@ -23,7 +23,6 @@
 | `GoogleAuthUtilClinitFingerprint` | `amhk.<clinit>` | `"com.google.work"`, `"cn.google"`, `"…auth.GetToken"`, `"GoogleAuthUtil"` | 지원 계정 타입 배열 `com.google`를 `app.revanced`로 바꾸고, GetToken `ComponentName`의 패키지를 `app.revanced.android.gms`로 바꿈(클래스 이름은 유지) |
 | `GoogleAuthUtilGetAccountIdFingerprint` | `amhk.b(Context,String)` | `"accountName must be provided"`, `"^^_account_id_^^"` | `Account(name, type)`의 type |
 | `GoogleAuthUtilGetAccountsFingerprint` | `amhk.h(Context)` | `"get_accounts"`, `"…gms.auth.accounts"` | provider authority, `call("get_accounts", type)`의 type |
-| `GoogleAuthUtilGetAccountsWithFeaturesFingerprint` | `amhk.i(Context,String[])`에서 생성자 `amhe.<init>`으로 이동 | `Activity.getComponentName()`에 이어 `<init>([String;String;L;J;J)` | 람다가 담는 계정 타입 (수동 패치에는 없음. GetToken이 GmsCore로 가므로 함께 바꿔야 일관됨) |
 | `GoogleAuthUtilTokenAccountTypeCheckFingerprint` | `amjf.b` | `"Account type "`, `" is not supported."` | `Account.type.equals(...)` 비교값 |
 | `AccountPickerIntentFingerprint` | `aney.a` | `CHOOSE_ACCOUNT`, `CHOOSE_ACCOUNT_USERTILE` | `Intent.setPackage(...)` 대상 (GmsCore의 `AccountPickerActivity`가 같은 action을 받음) |
 | `GoogleAccountTypeValidatorFingerprint` | `avem.a(String)Z` | 4가지 Google 계정 타입 문자열 | 메서드 앞에 `app.revanced`면 true를 반환하는 코드 삽입. 원래 검사(`com.google.work`, `cn.google`, `__logged_out_type`)는 그대로 둠. 수동 패치는 이 셋을 지워버렸음 |
@@ -41,7 +40,7 @@
 
 치환하지 않는 곳:
 `"<<default account>>"`를 쓰는 `GetServiceRequest` 계열(`anke`, `anlf`)은 순정 Play 서비스로 가는 요청이고,
-`amhk.i`의 `annf.h("com.google")`는 null 검사일 뿐입니다.
+`amhk.i`(features로 계정 조회)와 그 람다 `amhe`의 `"com.google"`도 그대로 둡니다. Play 북은 `features=["service_uca"]`로 요청합니다. 이걸 GmsCore 타입으로 바꾸면 GmsCore가 그 기능으로 계정을 걸러 빈 목록을 돌려주고, 앱이 로그인 화면에서 넘어가지 못합니다. `com.google`이면 이 호출이 실패하고, 앱은 위의 계정 provider 경로로 넘어갑니다. 수동 성공본도 이 상태였습니다.
 나머지 `Account(name, "com.google")` 생성은 대부분 `AppSingleton` 정규화를 거칩니다.
 이 부분은 선택 패치인 *GmsCore account type (extended)* 에서 일괄 변경할 수 있습니다.
 
@@ -86,9 +85,9 @@ apkzlib과 서명 코드만 스텁으로 바꿨습니다.
 
 | 검사 | 결과 |
 |---|---|
-| fingerprint 15개 각각의 매칭 수 (`matchAll`) | 모두 정확히 1개이며, 위 표의 메서드와 일치 |
+| fingerprint 14개 각각의 매칭 수 (`matchAll`) | 모두 정확히 1개이며, 위 표의 메서드와 일치 |
 | 원본 APK에 GmsCore support와 Custom reader font 적용 | 두 패치 모두 성공 |
-| 원본·수동 성공본·패치본을 baksmali로 풀어 클래스 비교 | 수동본이 바꾼 9개 클래스를 모두 바꿈. 추가로 바뀐 클래스는 의도한 `amhe`, `yyl`뿐이고 나머지는 동일 |
+| 원본·수동 성공본·패치본을 baksmali로 풀어 클래스 비교 | 수동본이 바꾼 9개 클래스를 모두 바꿈. 추가로 바뀐 클래스는 글꼴 훅을 넣은 `yyl`뿐이고 나머지는 동일 |
 | 수동 성공본과 직접 diff | `amhk`, `amjf`, `aney`, `assd`, `atxm`, `oyj`는 완전히 동일. `pir`은 훅 1줄 추가. `avem`, `AppSingleton`은 위에서 설명한 개선 버전 |
 | Manifest | 수동본의 변경을 모두 포함하고 글꼴 Activity와 런처 별칭이 추가됨 |
 | `compiled.js` 재작성 (3가지 설정) | 결과 JS가 `node --check` 통과. 의도한 부분만 바뀜 |

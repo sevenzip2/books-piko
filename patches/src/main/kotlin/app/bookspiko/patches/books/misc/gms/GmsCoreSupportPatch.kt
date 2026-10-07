@@ -6,7 +6,6 @@ import app.bookspiko.patches.books.shared.Constants.GMS_EXTENSION_CLASS
 import app.bookspiko.patches.books.shared.Constants.PLAY_BOOKS_PACKAGE
 import app.bookspiko.patches.books.shared.accountConstructorType
 import app.bookspiko.patches.books.shared.filledNewArray
-import app.bookspiko.patches.books.shared.instanceFieldStore
 import app.bookspiko.patches.books.shared.methodArgument
 import app.bookspiko.patches.books.shared.replaceStringLiteral
 import app.bookspiko.patches.books.shared.stringEquals
@@ -105,8 +104,11 @@ val gmsCoreSupportPatch = bytecodePatch(
             replaceStringLiteral(GOOGLE_ACCOUNT_TYPE, accountType)
         }
 
-        GoogleAuthUtilGetAccountsWithFeaturesFingerprint.instructionMatches[1].getMethodCalled()
-            .replaceStringLiteral(GOOGLE_ACCOUNT_TYPE, accountType, instanceFieldStore)
+        // Deliberately unchanged: getAccounts(Context, String[] features) keeps "com.google".
+        // Play Books asks for features ["service_uca"]. With the GmsCore account type, GmsCore filters
+        // its accounts by that feature and returns an empty list, so the app stays on the sign-in
+        // screen. With "com.google" the call fails and the app falls back to the account provider
+        // above, which is what the working manual build did.
 
         GoogleAuthUtilTokenAccountTypeCheckFingerprint.method.replaceStringLiteral(
             GOOGLE_ACCOUNT_TYPE,

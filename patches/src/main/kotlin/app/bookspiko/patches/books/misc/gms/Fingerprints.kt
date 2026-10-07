@@ -41,25 +41,6 @@ internal object GoogleAuthUtilGetAccountsFingerprint : Fingerprint(
     strings = listOf("com.google.android.gms.auth.accounts", "get_accounts", "callingActivity"),
 )
 
-/**
- * `getAccounts(Context, String[] features)`: delegates to a synthetic lambda whose constructor
- * captures the hardcoded account type before calling the (redirected) GetToken service.
- * The constructor is the second matched instruction.
- */
-internal object GoogleAuthUtilGetAccountsWithFeaturesFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC),
-    returnType = "[Landroid/accounts/Account;",
-    parameters = listOf("Landroid/content/Context;", "[Ljava/lang/String;"),
-    filters = listOf(
-        methodCall(smali = "Landroid/app/Activity;->getComponentName()Landroid/content/ComponentName;"),
-        methodCall(
-            name = "<init>",
-            parameters = listOf("[Ljava/lang/String;", "Ljava/lang/String;", "L", "J", "J"),
-            returnType = "V",
-        ),
-    ),
-)
-
 /** Token request validation: throws "Account type X is not supported." for non Google types. */
 internal object GoogleAuthUtilTokenAccountTypeCheckFingerprint : Fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.FINAL),
