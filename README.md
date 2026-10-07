@@ -32,19 +32,26 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
 ## 사용 방법
 
 1. Play 북 split APK(APKM/APKS)를 준비합니다. 검증한 버전은 `2026.9.4.1 (386871)`입니다.
-2. 이 저장소의 GitHub Actions 산출물(`books-piko-patches`)에서 `.mpp` 패치 번들을 받습니다.
+2. 패치합니다. 셋 중 하나를 고르세요.
+   - **Morphe Manager (링크)**: 폰에서 아래 링크를 열면 Manager에 패치 소스로 추가됩니다. 새 버전이 나오면 Manager가 알아서 업데이트합니다.
+
+     **https://morphe.software/add-source?github=sevenzip2/books-piko&name=Books%20Piko**
+
+     링크가 열리지 않으면 Manager의 패치 소스 추가에서 URL `https://github.com/sevenzip2/books-piko`를 입력하세요.
+     추가한 뒤 홈(또는 Other apps)에서 Play 북을 누르고 APKM을 고릅니다. "Split APK detected" 경고가 떠도 진행하면 됩니다.
+   - **Morphe Manager (파일)**: [Releases](https://github.com/sevenzip2/books-piko/releases/latest)에서 `patches-<version>.mpp`를 받아 Manager의 패치 소스 추가 → Local로 넣습니다.
+   - **[Morphe Desktop/CLI](https://github.com/MorpheApp/morphe-cli)**:
+     ```bash
+     java -jar morphe-desktop-*-all.jar patch -p patches-<version>.mpp play-books.apkm
+     ```
    직접 빌드하려면 `read:packages` 권한이 있는 GitHub 토큰이 필요합니다.
    ```bash
    GITHUB_ACTOR=<사용자명> GITHUB_TOKEN=<토큰> ./gradlew buildAndroid
    # 결과: patches/build/libs/patches-<version>.mpp
    ```
-3. Morphe Manager(사용자 패치 소스) 또는 [Morphe Desktop/CLI](https://github.com/MorpheApp/morphe-cli)로 패치합니다.
-   ```bash
-   java -jar morphe-desktop-*-all.jar patch -p patches-<version>.mpp play-books.apkm
-   ```
-4. 기존 Play 북을 지우고 패치한 APK를 설치합니다. 서명이 바뀌므로 덮어쓰기는 되지 않습니다.
-5. [ReVanced GmsCore](https://github.com/ReVanced/GmsCore)를 설치하고 GmsCore에서 Google 계정에 로그인합니다.
-6. Play 북을 처음 실행하면 **연락처** 권한(GET_ACCOUNTS)을 요청합니다. 허용하세요. 이 권한이 없으면 GmsCore가 계정을 넘겨주지 않아 로그인 화면에서 넘어가지 못합니다.
+3. 기존 Play 북을 지우고 패치한 APK를 설치합니다. 서명이 바뀌므로 덮어쓰기는 되지 않습니다.
+4. [ReVanced GmsCore](https://github.com/ReVanced/GmsCore)를 설치하고 GmsCore에서 Google 계정에 로그인합니다.
+5. Play 북을 처음 실행하면 **연락처** 권한(GET_ACCOUNTS)을 요청합니다. 허용하세요. 이 권한이 없으면 GmsCore가 계정을 넘겨주지 않아 로그인 화면에서 넘어가지 못합니다.
    창을 놓쳤다면 설정 → 애플리케이션 → Play 북 → 권한 → 연락처에서 허용하세요.
 
 NPatch 같은 도구를 함께 쓸 때는 전체 **MicroG/GMS redirect를 꺼야** 합니다. 필요한 경로는 이 패치가 직접 리디렉션합니다.
@@ -64,6 +71,15 @@ NPatch 같은 도구를 함께 쓸 때는 전체 **MicroG/GMS redirect를 꺼야
 - 확인: `adb logcat -s BooksPiko`에 `Serving custom font`가 보이면 적용된 것입니다.
 
 동작 방식은 [docs/ANALYSIS.md](docs/ANALYSIS.md)를 보세요.
+
+## 릴리스
+
+`main`에 푸시하면 `.github/workflows/release.yml`이 다음을 합니다.
+1. 패치 번호를 올립니다(`gradle.properties`의 `version`).
+2. `.mpp`를 빌드해 GitHub Release에 올립니다.
+3. Manager가 읽는 `patches-bundle.json`을 갱신합니다.
+
+부 버전이나 주 버전을 올리려면 `gradle.properties`의 `version`을 아직 릴리스하지 않은 값(예: `0.2.0`)으로 바꿔 푸시하세요.
 
 ## 새 Play 북 버전에 대응하기
 
