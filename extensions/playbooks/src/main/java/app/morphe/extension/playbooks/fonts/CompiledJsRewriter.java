@@ -47,7 +47,27 @@ public final class CompiledJsRewriter {
 
     /** First check of the same function: {@code if(b.Z&&a.constructor.name==="CSSFontFaceRule"} */
     private static final Pattern RULE_OVERRIDE_FIELD = Pattern.compile(
-            "if\\((\\w+)\\.(\\w+)&&\\w+\\.constructor\\.name===\"CSSFontFaceRule\"");
+            "if\\((\\w+)\\.(\\w+)&&(\\w+)\\.constructor\\.name===\"CSSFontFaceRule\"");
+
+    /**
+     * Helpers prepended to the engine. Publishers often make text bold with a separate bold font
+     * family (e.g. "XxxBold") instead of font-weight. The override replaces that family with the
+     * custom font, so the weight is lost. These helpers remember which publisher families are bold
+     * and log the fonts a book uses (logcat tag BooksJS, enable with
+     * {@code adb shell setprop log.tag.BooksJS DEBUG}).
+     */
+    static final String BOLD_HELPERS = "window.__bp=window.__bp||{seen:{},fam:{},"
+            + "w:function(v){v=String(v||\"\").trim();return v===\"bold\"||v===\"bolder\"?700:"
+            + "v===\"normal\"||v===\"lighter\"?400:parseInt(v,10)||0},"
+            + "nb:function(s){return/(semi|demi|extra|ultra)?bold|black|heavy|(^|[\\s_-])(b|bd|eb|sb|xb)($|[\\s_.-])/i.test(s||\"\")},"
+            + "log:function(m){if(this.seen[m])return;this.seen[m]=1;try{bridge.logD(\"BooksPiko \"+m)}catch(e){}},"
+            + "clean:function(f){return String(f||\"\").replace(/[\"']/g,\"\").trim().toLowerCase()},"
+            + "face:function(r){var s=r.style,f=this.clean(s.getPropertyValue(\"font-family\")),"
+            + "w=s.getPropertyValue(\"font-weight\"),src=s.getPropertyValue(\"src\")||\"\",e=this.fam[f]||(this.fam[f]={n:0,b:0});"
+            + "this.w(w)>=600||this.nb(src)?e.b=1:e.n=1;"
+            + "this.log(\"face family=\"+f+\" weight=\"+(w||\"-\")+\" style=\"+(s.getPropertyValue(\"font-style\")||\"-\")+\" src=\"+src.slice(0,160))},"
+            + "bold:function(s){var ff=s.fontFamily;if(!ff)return!1;this.log(\"rule family=\"+ff+\" weight=\"+(s.fontWeight||\"-\"));"
+            + "var t=this;return ff.split(\",\").some(function(x){x=t.clean(x);var e=t.fam[x];return t.nb(x)||(e&&e.b&&!e.n)})}};\n";
 
     /** The injected override rule: {@code '* { font-family: "'+a+'" !important; }'} */
     private static final Pattern CHOSEN_FONT_RULE = Pattern.compile("'\\* \\{ font-family: \"'\\+(\\w+)\\+'\"");
@@ -146,25 +166,33 @@ public final class CompiledJsRewriter {
             if (field.find() && style.find(field.end()) && chosen.find()) {
                 String settings = field.group(1) + "." + field.group(2);
                 String declaration = style.group(1);
-                String hook = settings + "===\"literata\"&&(function(s){var w=s.fontWeight;if(!w)return;"
-                        + "var n=w===\"bold\"||w===\"bolder\"?700:w===\"normal\"||w===\"lighter\"?400:parseInt(w,10);"
-                        + "n>=600?s.setProperty(\"-webkit-text-stroke-width\",\"" + BOLD_STROKE_WIDTH + "\"):"
+                String hook = settings + "===\"literata\"&&(function(s){var n=__bp.w(s.fontWeight);"
+                        + "n>=600||__bp.bold(s)?s.setProperty(\"-webkit-text-stroke-width\",\"" + BOLD_STROKE_WIDTH + "\"):"
                         + "n>0&&s.setProperty(\"-webkit-text-stroke-width\",\"0\")})(" + declaration + ");";
+                String faceHook = "window.__bp&&" + field.group(3) + ".constructor.name===\"CSSFontFaceRule\"&&__bp.face("
+                        + field.group(3) + ");";
                 String family = chosen.group(1);
                 String rule = "(" + family + "==\"literata\"?'" + DEFAULT_BOLD_RULE + "':'')+" + chosen.group();
 
                 // Edit from the end so earlier offsets stay valid.
                 int[][] edits = {
+                        {field.start(), field.start()},
                         {style.end(), style.end()},
                         {chosen.start(), chosen.end()},
                 };
-                String[] texts = {hook, rule};
+                String[] texts = {faceHook, hook, rule};
+                Integer[] order = {0, 1, 2};
+                java.util.Arrays.sort(order, new java.util.Comparator<Integer>() {
+                    @Override
+                    public int compare(Integer a, Integer b) {
+                        return edits[b][0] - edits[a][0];
+                    }
+                });
                 StringBuilder edited = new StringBuilder(rewritten);
-                Integer[] order = style.end() > chosen.start() ? new Integer[]{0, 1} : new Integer[]{1, 0};
                 for (int index : order) {
                     edited.replace(edits[index][0], edits[index][1], texts[index]);
                 }
-                rewritten = edited.toString();
+                rewritten = BOLD_HELPERS + edited;
                 summary.append(" strokeBold=on");
             } else {
                 summary.append(" strokeBold=NOT_FOUND");
