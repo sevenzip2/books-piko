@@ -1,0 +1,25 @@
+name: Probe version sources
+on:
+  push:
+    branches: [ccr-1ae6b9c3-fgg8gy]
+    paths: [".github/workflows/probe.yml"]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe
+        run: |
+          UA="Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36"
+          pat='20[0-9]{2}\.[0-9]+\.[0-9]+\.[0-9]+( \([0-9]+\))?'
+          probe() { echo "=== $1"; body=$(curl -sSL --max-time 30 -A "$UA" -w '\n__HTTP %{http_code}' "$2" 2>&1); echo "$body" | tail -1; echo "$body" | grep -oE "$pat" | sort -u | tail -8; }
+          probe apkmirror-feed "https://www.apkmirror.com/apk/google-inc/google-play-books/feed/"
+          probe uptodown "https://google-play-books.en.uptodown.com/android/versions"
+          probe apkpure "https://apkpure.com/google-play-books/com.google.android.apps.books/versions"
+          probe apkcombo "https://apkcombo.com/google-play-books/com.google.android.apps.books/old-versions/"
+          echo "=== play page context"
+          page=$(curl -sSL -A "$UA" "https://play.google.com/store/apps/details?id=com.google.android.apps.books&hl=en&gl=US")
+          grep -oE ".{120}2026\.7\.10\.2.{60}" <<< "$page" | head -2
+          grep -oE ".{80}(Varies with device|\"2026\.9[^\"]*\").{40}" <<< "$page" | head -3
+          echo "=== google-play-scraper"
+          npm i -s google-play-scraper@10 > /dev/null 2>&1 || npm i -s google-play-scraper > /dev/null 2>&1
+          node -e "import('google-play-scraper').then(m=>(m.default||m).app({appId:'com.google.android.apps.books'})).then(a=>console.log('version', a.version, 'updated', new Date(a.updated).toISOString())).catch(e=>console.log('error', e.message))"
