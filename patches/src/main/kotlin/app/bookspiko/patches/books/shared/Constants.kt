@@ -27,6 +27,7 @@ object Constants {
         ),
         targets = listOf(
             // Play Books puts the version code in its version name.
+            AppTarget(version = "2026.9.18.0 (389836)", versionCode = 389836, minSdk = 32),
             AppTarget(version = "2026.9.4.2 (386876)", versionCode = 386876, minSdk = 32),
             AppTarget(version = "2026.9.4.1 (386871)", versionCode = 386871, minSdk = 32),
             AppTarget(version = null, versionCodes = null, isExperimental = true),
