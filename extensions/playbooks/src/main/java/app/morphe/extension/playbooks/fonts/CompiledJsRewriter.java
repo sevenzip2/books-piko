@@ -74,15 +74,25 @@ public final class CompiledJsRewriter {
             + "return m?{EB:800,XB:800,UB:800,SB:600,DB:600,EL:200,UL:200,B:700,M:500,L:300,R:400,T:100,H:900}[m[1]]:0},"
             + "log:function(m){if(this.seen[m])return;this.seen[m]=1;try{bridge.logD(\"BooksPiko \"+m)}catch(e){}},"
             + "clean:function(f){return String(f||\"\").replace(/[\"']/g,\"\").trim()},"
+            // Each publisher family keeps its faces: d = declared font-weight (400 if unset), a = actual
+            // weight of the file, from its file name, the family name or the declaration.
             + "face:function(r){var s=r.style,f=this.clean(s.getPropertyValue(\"font-family\")),"
             + "w=s.getPropertyValue(\"font-weight\"),src=s.getPropertyValue(\"src\")||\"\","
-            + "u=/url\\(\\s*[\"']?([^\"')]+)/.exec(src),n=this.w(w)||this.wn(f)||(u?this.wn(u[1]):0);"
-            + "if(n)this.fam[f.toLowerCase()]=n;"
-            + "this.log(\"face family=\"+f+\" weight=\"+(w||\"-\")+\" inferred=\"+(n||\"-\")+\" src=\"+src.slice(0,160))},"
-            // Weight the publisher meant for a rule: its first family's weight, raised by an explicit bold weight.
-            + "weight:function(s){var ff=s.fontFamily,e=this.w(s.fontWeight),n=0;"
-            + "if(ff){var x=this.clean(ff.split(\",\")[0]);n=this.fam[x.toLowerCase()]||this.wn(x);}"
-            + "var r=n?Math.max(n,e>=600?e:0):e;"
+            + "u=/url\\(\\s*[\"']?([^\"')]+)/.exec(src),d=this.w(w)||400,a=(u?this.wn(u[1]):0)||this.wn(f)||d,"
+            + "k=f.toLowerCase(),l=this.fam[k]=this.fam[k]||[];"
+            + "l.some(function(x){return x.d===d&&x.a===a})||l.push({d:d,a:a});"
+            + "this.log(\"face family=\"+f+\" weight=\"+(w||\"-\")+\" actual=\"+a+\" src=\"+src.slice(0,160))},"
+            // Face the browser would pick for a requested weight (CSS font matching, simplified).
+            + "pick:function(fs,e){var b=null;for(var i=0;i<fs.length;i++){var x=fs[i];"
+            + "if(!b){b=x;continue}var dx=Math.abs(x.d-e),db=Math.abs(b.d-e);"
+            + "if(dx<db||dx===db&&(e>=500?x.d>b.d:x.d<b.d))b=x}return b},"
+            // Weight the publisher meant for a rule: the matching face of its first known family
+            // (requested weight: the rule's, or normal), bold-synthesized if no bold face exists.
+            + "weight:function(s){var ff=s.fontFamily,e=this.w(s.fontWeight),r=0,fs=null,n=0;"
+            + "if(ff){var l=ff.split(\",\");for(var i=0;i<l.length&&!fs&&!n;i++){var x=this.clean(l[i]);"
+            + "fs=this.fam[x.toLowerCase()];if(!fs)n=this.wn(x)}}"
+            + "if(fs){var q=e||400,p=this.pick(fs,q);r=q>=600&&p.d<600?Math.max(p.a,q):p.a}"
+            + "else r=n?Math.max(n,e>=600?e:0):e;"
             + "if(ff||e)this.log(\"rule family=\"+(ff||\"-\")+\" weight=\"+(s.fontWeight||\"-\")+\" resolved=\"+(r||\"-\"));return r},"
             // Stroke width that imitates the weight: 0.025em for bold (700), proportional above 400.
             + "apply:function(s){var r=this.weight(s);if(!r)return;"

@@ -81,6 +81,10 @@ EPUB 리플로우 본문은 **WebView**가 그립니다.
        그래서 글꼴 이름이나 파일명에서 굵기를 읽습니다. Light/Medium/Bold/Black 같은 단어, 그리고 소문자·숫자 뒤의 끝 글자 코드(T/L/R/M/SB/B/EB/H)를 봅니다.
        읽은 굵기는 외곽선 두께로 바꿉니다: 400 이하는 0, 700은 0.025em, 그 사이와 위는 비례.
        외곽선으로는 Light를 Regular보다 가늘게 만들 수 없습니다.
+     - 같은 이름 아래 굵기별 버전을 여러 개 두는 책도 있습니다. 예: `명조` 보통=`KoPubWorldBatangLight`, `명조` 굵게=`KoPubWorldBatangBold`.
+       그래서 글꼴마다 버전 목록(선언 굵기 `d`, 파일의 실제 굵기 `a`)을 기억합니다. 규칙이 요청한 굵기(없으면 보통)에 대해 브라우저처럼 가장 가까운 버전을 고르고, 그 버전의 실제 굵기를 씁니다.
+       굵게를 요청했는데 굵은 버전이 없으면, 원래 브라우저가 합성했을 굵게로 봅니다.
+       처음 구현은 글꼴당 굵기를 하나만 기억해서, 나중에 나온 Bold가 덮어쓰는 바람에 본문 전체가 굵게 칠해졌습니다.
      - 진단: 이 과정에서 책이 쓰는 `@font-face`와 규칙의 글꼴을 `bridge.logD`로 남깁니다. `adb shell setprop log.tag.BooksJS DEBUG` 후 `adb logcat -s BooksJS`로 볼 수 있습니다.
    - 고정폭 유지를 켜면 주입 규칙의 `*` 선택자를 `*:not(pre):not(code):not(kbd):not(samp):not(tt):not(pre *):not(code *)`로 바꿉니다.
 
