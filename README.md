@@ -38,7 +38,9 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
      **https://morphe.software/add-source?github=sevenzip2/books-piko&name=Books%20Piko**
 
      링크가 열리지 않으면 Manager의 패치 소스 추가에서 URL `https://github.com/sevenzip2/books-piko`를 입력하세요.
-     추가한 뒤 홈(또는 Other apps)에서 Play 북을 누르고 APKM을 고릅니다. "Split APK detected" 경고가 떠도 진행하면 됩니다.
+     추가한 뒤 홈에서 Play 북을 누르고 APKM을 고릅니다. "Split APK detected" 경고가 떠도 진행하면 됩니다.
+     원본이 없으면 **APK 없음**을 누르세요. Manager가 지원 버전의 원본 다운로드 페이지를 안내합니다.
+     번들에 Google 원본 서명이 들어 있어서, 받은 파일이 원본이 아니면 Manager가 경고합니다.
    - **Morphe Manager (파일)**: [Releases](https://github.com/sevenzip2/books-piko/releases/latest)에서 `patches-<version>.mpp`를 받아 Manager의 패치 소스 추가 → Local로 넣습니다.
    - **[Morphe Desktop/CLI](https://github.com/MorpheApp/morphe-cli)**:
      ```bash

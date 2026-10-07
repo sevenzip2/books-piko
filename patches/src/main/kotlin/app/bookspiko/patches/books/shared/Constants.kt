@@ -15,10 +15,19 @@ object Constants {
     val COMPATIBILITY_PLAY_BOOKS = Compatibility(
         name = "Google Play Books",
         packageName = PLAY_BOOKS_PACKAGE,
+        description = "Sign in with ReVanced GmsCore and read with your own fonts.",
         apkFileType = ApkFileType.APKM,
         appIconColor = 0x1A73E8,
+        // Lets Morphe Manager confirm that a downloaded APK is Google's original.
+        signatures = setOf(
+            // Android 13+ (APK Signature Scheme v3.1, rotated key)
+            "7ce83c1b71f3d572fed04c8d40c5cb10ff75e6d87d9df6fbd53f0468c2905053",
+            // Android 12L and earlier
+            "f0fd6c5b410f25cb25c3b53346c8972fae30f8ee7411df910480ad6b2d60db83",
+        ),
         targets = listOf(
-            AppTarget(version = "2026.9.4.1 (386871)"),
+            // Play Books puts the version code in its version name.
+            AppTarget(version = "2026.9.4.1 (386871)", versionCode = 386871, minSdk = 32),
             AppTarget(version = null, versionCodes = null, isExperimental = true),
         ),
     )
