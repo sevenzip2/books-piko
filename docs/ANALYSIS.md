@@ -77,6 +77,10 @@ EPUB 리플로우 본문은 **WebView**가 그립니다.
      - 기본이 굵은 태그(`b`, `strong`, `h1`–`h6`, `th`, `dt`)와 인라인 bold에는 `:where()` 규칙을 씁니다. 우선순위가 0이라 출판사 규칙이 이깁니다.
      - 0.025em은 Chromium 합성 굵게와 비슷한 두께입니다(1.45배 대 1.47배).
      - 굵은 글꼴 계열: 출판사가 `font-weight` 대신 별도 굵은 글꼴(예: `XxxBold`)로 굵게를 표현하면, 엔진이 그 글꼴을 사용자 글꼴로 바꾸면서 굵기 정보가 사라집니다. 그래서 `@font-face`를 처리할 때(`Pi` 시작) 글꼴 이름과 파일명, 굵기를 기록합니다. 이름이나 파일명이 bold/black/heavy/-B 등이거나 굵게 face만 있는 글꼴을 쓰는 규칙에도 외곽선을 줍니다.
+     - 굵기를 글꼴 이름에만 담는 책도 있습니다. 실측한 KoPub 책은 `KOPUSMjL`/`KOPUSMjM`/`KOPUSMjB`(바탕 Light/Medium/Bold)와 `KOPUSGo*`(돋움)를 쓰고, `font-weight`는 비어 있거나 `normal`이었습니다.
+       그래서 글꼴 이름이나 파일명에서 굵기를 읽습니다. Light/Medium/Bold/Black 같은 단어, 그리고 소문자·숫자 뒤의 끝 글자 코드(T/L/R/M/SB/B/EB/H)를 봅니다.
+       읽은 굵기는 외곽선 두께로 바꿉니다: 400 이하는 0, 700은 0.025em, 그 사이와 위는 비례.
+       외곽선으로는 Light를 Regular보다 가늘게 만들 수 없습니다.
      - 진단: 이 과정에서 책이 쓰는 `@font-face`와 규칙의 글꼴을 `bridge.logD`로 남깁니다. `adb shell setprop log.tag.BooksJS DEBUG` 후 `adb logcat -s BooksJS`로 볼 수 있습니다.
    - 고정폭 유지를 켜면 주입 규칙의 `*` 선택자를 `*:not(pre):not(code):not(kbd):not(samp):not(tt):not(pre *):not(code *)`로 바꿉니다.
 

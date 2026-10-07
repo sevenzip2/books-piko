@@ -56,24 +56,40 @@ public final class CompiledJsRewriter {
      * and log the fonts a book uses (logcat tag BooksJS, enable with
      * {@code adb shell setprop log.tag.BooksJS DEBUG}).
      */
+    /** Matches Chromium's synthetic bold for typical text (measured with RIDIBatang). */
+    static final String BOLD_STROKE_EM = "0.025";
+    static final String BOLD_STROKE_WIDTH = BOLD_STROKE_EM + "em";
+
     static final String BOLD_HELPERS = "window.__bp=window.__bp||{seen:{},fam:{},"
+            // Numeric value of a font-weight declaration, 0 if unset.
             + "w:function(v){v=String(v||\"\").trim();return v===\"bold\"||v===\"bolder\"?700:"
             + "v===\"normal\"||v===\"lighter\"?400:parseInt(v,10)||0},"
-            + "nb:function(s){return/(semi|demi|extra|ultra)?bold|black|heavy|(^|[\\s_-])(b|bd|eb|sb|xb)($|[\\s_.-])/i.test(s||\"\")},"
+            // Weight implied by a family or file name: words (Light, Medium, Bold, ...) or a trailing
+            // weight code after a lowercase letter or digit, as in KoPub "KOPUSMjB" (B = bold).
+            + "wn:function(x){x=String(x||\"\").replace(/[\"']/g,\"\").replace(/^.*\\//,\"\").replace(/\\.[A-Za-z0-9]+([?#].*)?$/,\"\").trim();"
+            + "var r=[[/(extra|ultra)[\\s_-]?bold|heavy|black/i,800],[/(semi|demi)[\\s_-]?bold/i,600],[/bold/i,700],"
+            + "[/medium/i,500],[/(extra|ultra)[\\s_-]?light|thin|hairline/i,200],[/light/i,300],[/regular|book/i,400]];"
+            + "for(var i=0;i<r.length;i++)if(r[i][0].test(x))return r[i][1];"
+            + "var m=/(?:[a-z0-9]|[\\s_-])(EB|XB|UB|SB|DB|EL|UL|B|M|L|R|T|H)$/.exec(x);"
+            + "return m?{EB:800,XB:800,UB:800,SB:600,DB:600,EL:200,UL:200,B:700,M:500,L:300,R:400,T:100,H:900}[m[1]]:0},"
             + "log:function(m){if(this.seen[m])return;this.seen[m]=1;try{bridge.logD(\"BooksPiko \"+m)}catch(e){}},"
-            + "clean:function(f){return String(f||\"\").replace(/[\"']/g,\"\").trim().toLowerCase()},"
+            + "clean:function(f){return String(f||\"\").replace(/[\"']/g,\"\").trim()},"
             + "face:function(r){var s=r.style,f=this.clean(s.getPropertyValue(\"font-family\")),"
-            + "w=s.getPropertyValue(\"font-weight\"),src=s.getPropertyValue(\"src\")||\"\",e=this.fam[f]||(this.fam[f]={n:0,b:0});"
-            + "this.w(w)>=600||this.nb(src)?e.b=1:e.n=1;"
-            + "this.log(\"face family=\"+f+\" weight=\"+(w||\"-\")+\" style=\"+(s.getPropertyValue(\"font-style\")||\"-\")+\" src=\"+src.slice(0,160))},"
-            + "bold:function(s){var ff=s.fontFamily;if(!ff)return!1;this.log(\"rule family=\"+ff+\" weight=\"+(s.fontWeight||\"-\"));"
-            + "var t=this;return ff.split(\",\").some(function(x){x=t.clean(x);var e=t.fam[x];return t.nb(x)||(e&&e.b&&!e.n)})}};\n";
+            + "w=s.getPropertyValue(\"font-weight\"),src=s.getPropertyValue(\"src\")||\"\","
+            + "u=/url\\(\\s*[\"']?([^\"')]+)/.exec(src),n=this.w(w)||this.wn(f)||(u?this.wn(u[1]):0);"
+            + "if(n)this.fam[f.toLowerCase()]=n;"
+            + "this.log(\"face family=\"+f+\" weight=\"+(w||\"-\")+\" inferred=\"+(n||\"-\")+\" src=\"+src.slice(0,160))},"
+            // Weight the publisher meant for a rule: its first family's weight, raised by an explicit bold weight.
+            + "weight:function(s){var ff=s.fontFamily,e=this.w(s.fontWeight),n=0;"
+            + "if(ff){var x=this.clean(ff.split(\",\")[0]);n=this.fam[x.toLowerCase()]||this.wn(x);}"
+            + "var r=n?Math.max(n,e>=600?e:0):e;"
+            + "if(ff||e)this.log(\"rule family=\"+(ff||\"-\")+\" weight=\"+(s.fontWeight||\"-\")+\" resolved=\"+(r||\"-\"));return r},"
+            // Stroke width that imitates the weight: 0.025em for bold (700), proportional above 400.
+            + "apply:function(s){var r=this.weight(s);if(!r)return;"
+            + "s.setProperty(\"-webkit-text-stroke-width\",r>400?(Math.min(r,900)-400)/300*" + BOLD_STROKE_EM + "+\"em\":\"0\")}};\n";
 
     /** The injected override rule: {@code '* { font-family: "'+a+'" !important; }'} */
     private static final Pattern CHOSEN_FONT_RULE = Pattern.compile("'\\* \\{ font-family: \"'\\+(\\w+)\\+'\"");
-
-    /** Matches Chromium's synthetic bold for typical text (measured with RIDIBatang). */
-    static final String BOLD_STROKE_WIDTH = "0.025em";
 
     /** Bold by default in the user agent style sheet, or bold inline styles. Zero specificity. */
     static final String DEFAULT_BOLD_RULE = "* { font-synthesis: style; } "
@@ -166,9 +182,7 @@ public final class CompiledJsRewriter {
             if (field.find() && style.find(field.end()) && chosen.find()) {
                 String settings = field.group(1) + "." + field.group(2);
                 String declaration = style.group(1);
-                String hook = settings + "===\"literata\"&&(function(s){var n=__bp.w(s.fontWeight);"
-                        + "n>=600||__bp.bold(s)?s.setProperty(\"-webkit-text-stroke-width\",\"" + BOLD_STROKE_WIDTH + "\"):"
-                        + "n>0&&s.setProperty(\"-webkit-text-stroke-width\",\"0\")})(" + declaration + ");";
+                String hook = settings + "===\"literata\"&&__bp.apply(" + declaration + ");";
                 String faceHook = "window.__bp&&" + field.group(3) + ".constructor.name===\"CSSFontFaceRule\"&&__bp.face("
                         + field.group(3) + ");";
                 String family = chosen.group(1);
