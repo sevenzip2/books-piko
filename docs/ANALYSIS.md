@@ -30,7 +30,7 @@
 | `AddAccountFingerprint` | `oyj.f` | `"introMessage"`, `AccountManager.addAccount` | addAccount type |
 | `OneGoogleAddAccountClickFingerprint` | `assd.onClick` | `"ACCOUNT_MANAGER"`, `"ADD_ACCOUNT_ACTIVITY"` | addAccount type |
 | `BaseBooksActivityOnActivityResultFingerprint` | `pir.onActivityResult` | `"authAccount"`, `new Account` | 선택 결과 계정 타입 |
-| `BaseBooksActivityOnResumeFingerprint` | `pir.onResume` | `"GMSCore check: unresolvable error %s"`, `"login_hint"` | 계정 선택기 허용 타입. `super.onResume()` 뒤에 GET_ACCOUNTS 런타임 권한 요청 삽입 |
+| `BaseBooksActivityOnResumeFingerprint` | `pir.onResume` | `"GMSCore check: unresolvable error %s"`, `"login_hint"` | 계정 선택기 허용 타입. `super.onResume()` 뒤에 GET_ACCOUNTS 확인 삽입. 권한이 없으면 프로세스당 한 번 요청하고, 그 onResume의 계정 처리는 건너뜀(권한 창 위에 계정 선택기가 뜨지 않게) |
 | `BaseBooksActivityAccountFromIntentFingerprint` | `pir.v(Intent)` | `"authAccount"`, `"email"`, `Account.<init>` | AccountData에서 만든 계정 타입 |
 | `AppSingletonGetAccountComponentFingerprint` | `AppSingleton.getAccountComponent(Account)` | 난독화되지 않은 이름 | 맨 앞에서 `(email, com.google)`을 `(email, app.revanced)`로 바꿈. 계정 컴포넌트 캐시 키가 Account 전체여서 생기는 `multiple DataStores active for the same file` 크래시를 막음 |
 

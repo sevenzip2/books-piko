@@ -1,10 +1,13 @@
 package app.morphe.extension.playbooks.gms;
 
+import static app.morphe.extension.playbooks.shared.Text.t;
+
 import android.Manifest;
 import android.accounts.Account;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.util.Log;
+import android.widget.Toast;
 
 @SuppressWarnings("unused")
 public final class GmsCoreSupport {
@@ -12,7 +15,7 @@ public final class GmsCoreSupport {
     private static final String GOOGLE_ACCOUNT_TYPE = "com.google";
     private static final int REQUEST_GET_ACCOUNTS = 0x5b0c;
 
-    private static volatile boolean checkedThisProcess;
+    private static volatile boolean requestedThisProcess;
 
     private GmsCoreSupport() {
     }
@@ -30,20 +33,33 @@ public final class GmsCoreSupport {
     }
 
     /**
-     * Injected after super.onResume() of the base activity. Runs once per process.
+     * Injected after super.onResume() of the base activity.
      * GmsCore only lists accounts to apps holding GET_ACCOUNTS, a runtime permission.
+     * Without it the app finds no account and stays on the sign-in screen.
+     *
+     * @return true if the permission was just requested. The caller then skips the rest of
+     * onResume(), which would otherwise open the account picker on top of the permission dialog.
+     * onResume() runs again once the dialog closes. The permission is requested once per process,
+     * so a denial does not block the app.
      */
-    public static void onActivityResumed(Activity activity) {
-        if (checkedThisProcess) return;
-        checkedThisProcess = true;
-
+    public static boolean onActivityResumed(Activity activity) {
         try {
             if (activity.checkSelfPermission(Manifest.permission.GET_ACCOUNTS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                activity.requestPermissions(new String[]{Manifest.permission.GET_ACCOUNTS}, REQUEST_GET_ACCOUNTS);
+                    == PackageManager.PERMISSION_GRANTED) {
+                return false;
             }
+            if (requestedThisProcess) return false;
+            requestedThisProcess = true;
+
+            Toast.makeText(activity, t(
+                    "GmsCore 계정으로 로그인하려면 '연락처' 권한을 허용하세요.",
+                    "Allow the Contacts permission to sign in with your GmsCore account."),
+                    Toast.LENGTH_LONG).show();
+            activity.requestPermissions(new String[]{Manifest.permission.GET_ACCOUNTS}, REQUEST_GET_ACCOUNTS);
+            return true;
         } catch (Throwable throwable) {
             Log.e(TAG, "GET_ACCOUNTS request failed", throwable);
+            return false;
         }
     }
 }

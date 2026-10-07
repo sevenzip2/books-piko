@@ -7,6 +7,7 @@ import app.bookspiko.patches.books.shared.Constants.PLAY_BOOKS_PACKAGE
 import app.bookspiko.patches.books.shared.accountConstructorType
 import app.bookspiko.patches.books.shared.filledNewArray
 import app.bookspiko.patches.books.shared.methodArgument
+import app.bookspiko.patches.books.shared.registersUsed
 import app.bookspiko.patches.books.shared.replaceStringLiteral
 import app.bookspiko.patches.books.shared.stringEquals
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
@@ -154,15 +155,29 @@ val gmsCoreSupportPatch = bytecodePatch(
                 filledNewArray,
             )
 
-            // Request the GET_ACCOUNTS runtime permission GmsCore requires to list accounts.
+            // Request the GET_ACCOUNTS runtime permission GmsCore requires to list accounts, and skip
+            // the account handling of this onResume() while the permission dialog is shown.
             val superIndex = instructions.indexOfFirst { instruction ->
                 (instruction.opcode == Opcode.INVOKE_SUPER || instruction.opcode == Opcode.INVOKE_SUPER_RANGE) &&
                     ((instruction as ReferenceInstruction).reference as MethodReference).name == "onResume"
             }
             if (superIndex < 0) throw PatchException("super.onResume() not found in ${this.definingClass}")
-            addInstructions(
+
+            // A register the next instruction overwrites without reading is free at this point.
+            val next = getInstruction(superIndex + 1)
+            val freeRegister = next.registersUsed.firstOrNull()?.takeIf { register ->
+                next.opcode.setsRegister() && register !in next.registersUsed.drop(1)
+            } ?: throw PatchException("No free register after super.onResume() in ${this.definingClass}")
+
+            addInstructionsWithLabels(
                 superIndex + 1,
-                "invoke-static/range { p0 .. p0 }, $GMS_EXTENSION_CLASS->onActivityResumed(Landroid/app/Activity;)V",
+                """
+                    invoke-static/range { p0 .. p0 }, $GMS_EXTENSION_CLASS->onActivityResumed(Landroid/app/Activity;)Z
+                    move-result v$freeRegister
+                    if-eqz v$freeRegister, :continue
+                    return-void
+                """,
+                ExternalLabel("continue", next),
             )
         }
 

@@ -44,8 +44,8 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
    ```
 4. 기존 Play 북을 지우고 패치한 APK를 설치합니다. 서명이 바뀌므로 덮어쓰기는 되지 않습니다.
 5. [ReVanced GmsCore](https://github.com/ReVanced/GmsCore)를 설치하고 GmsCore에서 Google 계정에 로그인합니다.
-6. Play 북을 처음 실행하면 연락처(GET_ACCOUNTS) 권한을 요청합니다. 허용하세요.
-   개발 중 재설치했다면 `adb shell pm grant com.google.android.apps.books android.permission.GET_ACCOUNTS`
+6. Play 북을 처음 실행하면 **연락처** 권한(GET_ACCOUNTS)을 요청합니다. 허용하세요. 이 권한이 없으면 GmsCore가 계정을 넘겨주지 않아 로그인 화면에서 넘어가지 못합니다.
+   창을 놓쳤다면 설정 → 애플리케이션 → Play 북 → 권한 → 연락처에서 허용하세요.
 
 NPatch 같은 도구를 함께 쓸 때는 전체 **MicroG/GMS redirect를 꺼야** 합니다. 필요한 경로는 이 패치가 직접 리디렉션합니다.
 전체 리디렉션을 켜면 GmsCore에 없거나 동작이 다른 서비스까지 넘어가서 초기화가 깨집니다.
