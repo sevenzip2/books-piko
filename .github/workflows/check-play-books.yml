@@ -1,7 +1,8 @@
 name: Check Play Books version
 
-# Opens an issue when Google Play has a Play Books version that the patches do not list yet.
+# Opens an issue when APKMirror has a Play Books build newer than every version the patches list.
 # GitHub notifies the repository owner about new issues (app, web and e-mail).
+# Google Play is not used: its page does not show the current version.
 
 on:
   schedule:
@@ -20,34 +21,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find latest version
+      - name: Find the newest release
         id: latest
         run: |
-          # Play Books puts the build number in its version name, e.g. "2026.9.4.2 (386876)".
-          pattern='20[0-9]{2}\.[0-9]+\.[0-9]+\.[0-9]+ \([0-9]+\)'
-          page=$(curl -fsSL --retry 3 -A "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36" \
-            "https://play.google.com/store/apps/details?id=com.google.android.apps.books&hl=en&gl=US" || true)
-          echo "Play Store page: ${#page} bytes"
-          echo "Versions on the page:"
-          grep -oE "$pattern" <<< "$page" | sort -u || true
-          latest=$(grep -oE "$pattern" <<< "$page" | sort -t' ' -k1,1V | tail -1 || true)
-          if [ -z "$latest" ]; then
-            echo "::warning::Could not read the Play Books version from Google Play."
-          fi
-          echo "version=$latest" >> "$GITHUB_OUTPUT"
+          curl -fsSL --retry 3 --max-time 60 -A "Mozilla/5.0" \
+            "https://www.apkmirror.com/apk/google-inc/google-play-books/feed/" > feed.xml
+          python3 - <<'PY'
+          import os, re, xml.etree.ElementTree as ET
 
-      - name: Open an issue for an unsupported version
-        if: steps.latest.outputs.version != ''
+          # Release titles look like "Google Play Books & Audiobooks 2026.9.4.2 (386876) by Google LLC".
+          pattern = re.compile(r"(\d{4}\.\d+\.\d+\.\d+ \((\d+)\))")
+          releases = []
+          for item in ET.parse("feed.xml").getroot().iter("item"):
+              title = item.findtext("title") or ""
+              match = pattern.search(title)
+              if match and not re.search(r"\b(alpha|beta)\b", title, re.I):
+                  releases.append((int(match.group(2)), match.group(1), item.findtext("link") or ""))
+          if not releases:
+              raise SystemExit("No Play Books release found in the APKMirror feed")
+          code, version, link = max(releases)
+          print(f"Newest on APKMirror: {version} {link}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"version={version}\ncode={code}\nlink={link}\n")
+          PY
+
+      - name: Open an issue for a newer build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LATEST: ${{ steps.latest.outputs.version }}
+          LATEST_CODE: ${{ steps.latest.outputs.code }}
+          LINK: ${{ steps.latest.outputs.link }}
           OWNER: ${{ github.repository_owner }}
         run: |
           constants=patches/src/main/kotlin/app/bookspiko/patches/books/shared/Constants.kt
-          echo "Supported:"
-          grep -oE 'version = "[^"]+"' "$constants"
-          if grep -qF "version = \"$LATEST\"" "$constants"; then
-            echo "$LATEST is already supported."
+          supported=$(grep -oE 'versionCode = [0-9]+' "$constants" | grep -oE '[0-9]+' | sort -n | tail -1)
+          echo "Newest supported build: $supported, newest released: $LATEST_CODE"
+          if [ "$LATEST_CODE" -le "$supported" ]; then
+            echo "Up to date."
             exit 0
           fi
           title="Play Books $LATEST released"
@@ -56,7 +66,7 @@ jobs:
             exit 0
           fi
           gh issue create --title "$title" --body "$(cat <<EOF
-          @$OWNER Google Play has Play Books **$LATEST**, which the patches do not list yet.
+          @$OWNER Play Books **$LATEST** is out ([APKMirror]($LINK)). The patches list builds up to $supported.
 
           1. Patch the new APKM with the latest release and check sign-in, the reader font and Settings > Ebook reading > Custom font.
           2. If everything works, add it to \`COMPATIBILITY_PLAY_BOOKS\` in \`$constants\` (or ask Claude to bump the version).
