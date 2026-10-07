@@ -33,6 +33,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew clean buildAndroid --no-daemon
 
+      - name: Check patch bundle contents
+        run: |
+          bundle=$(ls patches/build/libs/*.mpp)
+          unzip -l "$bundle"
+          # The extension must be bundled and the patches compiled to DEX for Morphe Manager on Android.
+          unzip -l "$bundle" | grep -q "extensions/playbooks.mpe"
+          unzip -l "$bundle" | grep -q "classes.dex"
+
       - name: Upload patch bundle
         uses: actions/upload-artifact@v4
         with:
