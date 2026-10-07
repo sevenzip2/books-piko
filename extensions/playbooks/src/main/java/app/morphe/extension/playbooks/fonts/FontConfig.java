@@ -12,14 +12,17 @@ public final class FontConfig {
     public final boolean replaceAllFamilies;
     public final boolean forceOverPublisherFonts;
     public final boolean keepMonospace;
+    /** Draw bold text with a text stroke instead of relying on the WebView to synthesize it. */
+    public final boolean strokeBold;
     /** Faces with a font file. Contains at least REGULAR when the custom font is active. */
     public final Set<FontVariant> availableVariants;
 
     public FontConfig(boolean replaceAllFamilies, boolean forceOverPublisherFonts, boolean keepMonospace,
-                      Set<FontVariant> availableVariants) {
+                      boolean strokeBold, Set<FontVariant> availableVariants) {
         this.replaceAllFamilies = replaceAllFamilies;
         this.forceOverPublisherFonts = forceOverPublisherFonts;
         this.keepMonospace = keepMonospace;
+        this.strokeBold = strokeBold;
         this.availableVariants = availableVariants.isEmpty()
                 ? EnumSet.noneOf(FontVariant.class)
                 : EnumSet.copyOf(availableVariants);
@@ -33,6 +36,7 @@ public final class FontConfig {
 
     /** Cache key of everything that changes the rewritten compiled.js. */
     String signature() {
-        return replaceAllFamilies + "|" + forceOverPublisherFonts + "|" + keepMonospace + "|" + availableVariants;
+        return replaceAllFamilies + "|" + forceOverPublisherFonts + "|" + keepMonospace + "|" + strokeBold
+                + "|" + availableVariants;
     }
 }

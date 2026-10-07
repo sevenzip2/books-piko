@@ -29,6 +29,7 @@ public final class FontStore {
     private static final String KEY_REPLACE_ALL = "replace_all_families";
     private static final String KEY_FORCE = "force_over_publisher_fonts";
     private static final String KEY_KEEP_MONOSPACE = "keep_monospace";
+    private static final String KEY_STROKE_BOLD = "stroke_bold";
     private static final String KEY_NAME_PREFIX = "name_";
 
     private static volatile FontStore instance;
@@ -93,6 +94,14 @@ public final class FontStore {
         preferences.edit().putBoolean(KEY_KEEP_MONOSPACE, value).apply();
     }
 
+    public boolean strokeBold() {
+        return preferences.getBoolean(KEY_STROKE_BOLD, true);
+    }
+
+    public void setStrokeBold(boolean value) {
+        preferences.edit().putBoolean(KEY_STROKE_BOLD, value).apply();
+    }
+
     // endregion
 
     // region Font files
@@ -127,7 +136,7 @@ public final class FontStore {
         for (FontVariant variant : FontVariant.values()) {
             if (has(variant)) available.add(variant);
         }
-        return new FontConfig(replaceAllFamilies(), forceOverPublisherFonts(), keepMonospace(), available);
+        return new FontConfig(replaceAllFamilies(), forceOverPublisherFonts(), keepMonospace(), strokeBold(), available);
     }
 
     /** Opens the face to serve for [variant], falling back to the regular face. */

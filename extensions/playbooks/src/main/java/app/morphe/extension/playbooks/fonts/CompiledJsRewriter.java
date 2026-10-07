@@ -42,6 +42,25 @@ public final class CompiledJsRewriter {
     private static final Pattern DYNAMIC_FACE_BUILDER = Pattern.compile(
             "function\\((\\w+)\\)\\{(\\w+)\\.push\\(\\[\"@font-face \\{\",");
 
+    /** Start of the per-rule style processing: {@code a=a.style;if(!a)return f;} */
+    private static final Pattern RULE_STYLE = Pattern.compile("(\\w+)=\\1\\.style;if\\(!\\1\\)return \\w+;");
+
+    /** First check of the same function: {@code if(b.Z&&a.constructor.name==="CSSFontFaceRule"} */
+    private static final Pattern RULE_OVERRIDE_FIELD = Pattern.compile(
+            "if\\((\\w+)\\.(\\w+)&&\\w+\\.constructor\\.name===\"CSSFontFaceRule\"");
+
+    /** The injected override rule: {@code '* { font-family: "'+a+'" !important; }'} */
+    private static final Pattern CHOSEN_FONT_RULE = Pattern.compile("'\\* \\{ font-family: \"'\\+(\\w+)\\+'\"");
+
+    /** Matches Chromium's synthetic bold for typical text (measured with RIDIBatang). */
+    static final String BOLD_STROKE_WIDTH = "0.025em";
+
+    /** Bold by default in the user agent style sheet, or bold inline styles. Zero specificity. */
+    static final String DEFAULT_BOLD_RULE = "* { font-synthesis: style; } "
+            + ":where(b, strong, h1, h2, h3, h4, h5, h6, th, dt, [style*=\"font-weight: bold\" i], "
+            + "[style*=\"font-weight:bold\" i], [style*=\"font-weight: 700\"], [style*=\"font-weight:700\"]) "
+            + "{ -webkit-text-stroke-width: " + BOLD_STROKE_WIDTH + "; } ";
+
     static final String DEFAULT_BODY_RULE = "body { font-family: literata; }";
     static final String CHOSEN_FONT_RULE_START = "'* { font-family: \"'";
 
@@ -115,6 +134,40 @@ public final class CompiledJsRewriter {
                 summary.append(" override=").append(config.forceOverPublisherFonts ? "always" : "chosen");
             } else {
                 summary.append(" override=NOT_FOUND");
+            }
+        }
+
+        // Some WebViews do not synthesize bold for web fonts. Draw bold text with a stroke instead,
+        // only while the custom font is the override ("literata").
+        if (config.strokeBold && !config.availableVariants.contains(FontVariant.BOLD)) {
+            Matcher field = RULE_OVERRIDE_FIELD.matcher(rewritten);
+            Matcher style = RULE_STYLE.matcher(rewritten);
+            Matcher chosen = CHOSEN_FONT_RULE.matcher(rewritten);
+            if (field.find() && style.find(field.end()) && chosen.find()) {
+                String settings = field.group(1) + "." + field.group(2);
+                String declaration = style.group(1);
+                String hook = settings + "===\"literata\"&&(function(s){var w=s.fontWeight;if(!w)return;"
+                        + "var n=w===\"bold\"||w===\"bolder\"?700:w===\"normal\"||w===\"lighter\"?400:parseInt(w,10);"
+                        + "n>=600?s.setProperty(\"-webkit-text-stroke-width\",\"" + BOLD_STROKE_WIDTH + "\"):"
+                        + "n>0&&s.setProperty(\"-webkit-text-stroke-width\",\"0\")})(" + declaration + ");";
+                String family = chosen.group(1);
+                String rule = "(" + family + "==\"literata\"?'" + DEFAULT_BOLD_RULE + "':'')+" + chosen.group();
+
+                // Edit from the end so earlier offsets stay valid.
+                int[][] edits = {
+                        {style.end(), style.end()},
+                        {chosen.start(), chosen.end()},
+                };
+                String[] texts = {hook, rule};
+                StringBuilder edited = new StringBuilder(rewritten);
+                Integer[] order = style.end() > chosen.start() ? new Integer[]{0, 1} : new Integer[]{1, 0};
+                for (int index : order) {
+                    edited.replace(edits[index][0], edits[index][1], texts[index]);
+                }
+                rewritten = edited.toString();
+                summary.append(" strokeBold=on");
+            } else {
+                summary.append(" strokeBold=NOT_FOUND");
             }
         }
 

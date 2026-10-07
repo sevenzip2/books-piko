@@ -120,6 +120,14 @@ public class FontSettingsActivity extends Activity {
                         store.setForceOverPublisherFonts(value);
                     }
                 });
+        addCheckBox(t("굵은 글씨를 외곽선으로 표시 (굵게 글꼴이 없을 때)",
+                        "Draw bold text with an outline (when no bold face is added)"),
+                store.strokeBold(), new Toggle() {
+                    @Override
+                    public void set(boolean value) {
+                        store.setStrokeBold(value);
+                    }
+                });
         addCheckBox(t("코드/고정폭 글꼴 유지", "Keep code and monospace text"),
                 store.keepMonospace(), new Toggle() {
                     @Override
