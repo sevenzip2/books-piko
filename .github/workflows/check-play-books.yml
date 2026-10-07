@@ -1,9 +1,8 @@
 name: Check Play Books version
 
-# Opens an issue when the latest Play Books release on APKMirror is newer than every version the
-# patches list. "Latest" is the most recently published release, not the highest build: Google ships
-# beta builds (e.g. 2026.9.18.0) ahead of stable ones (2026.9.4.2) and APKMirror does not always
-# mark them as beta. A stable release published after a beta wins.
+# Opens an issue when APKMirror has a Play Books build newer than every version the patches list.
+# "Newest" is the highest build number, not the most recent upload: Google keeps fixing the previous
+# line after rolling out the next one (2026.9.4.2 came out after 2026.9.18.0, both on Google Play).
 # GitHub notifies the repository owner about new issues (app, web and e-mail).
 # Google Play is not used: its page does not show the current version.
 
@@ -24,14 +23,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find the latest release
+      - name: Find the newest release
         id: latest
         run: |
           curl -fsSL --retry 3 --max-time 60 -A "Mozilla/5.0" \
             "https://www.apkmirror.com/apk/google-inc/google-play-books/feed/" > feed.xml
           python3 - <<'PY'
           import os, re, xml.etree.ElementTree as ET
-          from email.utils import parsedate_to_datetime
 
           # Release titles look like "Google Play Books & Audiobooks 2026.9.4.2 (386876) by Google LLC".
           pattern = re.compile(r"(\d{4}\.\d+\.\d+\.\d+ \((\d+)\))")
@@ -40,12 +38,11 @@ jobs:
               title = item.findtext("title") or ""
               match = pattern.search(title)
               if match and not re.search(r"\b(alpha|beta)\b", title, re.I):
-                  published = parsedate_to_datetime(item.findtext("pubDate"))
-                  releases.append((published, int(match.group(2)), match.group(1), item.findtext("link") or ""))
+                  releases.append((int(match.group(2)), match.group(1), item.findtext("link") or ""))
           if not releases:
               raise SystemExit("No Play Books release found in the APKMirror feed")
-          published, code, version, link = max(releases)
-          print(f"Latest on APKMirror: {version}, published {published:%Y-%m-%d} {link}")
+          code, version, link = max(releases)
+          print(f"Newest on APKMirror: {version} {link}")
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
               out.write(f"version={version}\ncode={code}\nlink={link}\n")
           PY
