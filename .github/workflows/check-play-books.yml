@@ -1,0 +1,65 @@
+name: Check Play Books version
+
+# Opens an issue when Google Play has a Play Books version that the patches do not list yet.
+# GitHub notifies the repository owner about new issues (app, web and e-mail).
+
+on:
+  schedule:
+    - cron: "17 0 * * *" # Daily, 09:17 KST.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find latest version
+        id: latest
+        run: |
+          # Play Books puts the build number in its version name, e.g. "2026.9.4.2 (386876)".
+          pattern='20[0-9]{2}\.[0-9]+\.[0-9]+\.[0-9]+ \([0-9]+\)'
+          page=$(curl -fsSL --retry 3 -A "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36" \
+            "https://play.google.com/store/apps/details?id=com.google.android.apps.books&hl=en&gl=US" || true)
+          echo "Play Store page: ${#page} bytes"
+          echo "Versions on the page:"
+          grep -oE "$pattern" <<< "$page" | sort -u || true
+          latest=$(grep -oE "$pattern" <<< "$page" | sort -t' ' -k1,1V | tail -1 || true)
+          if [ -z "$latest" ]; then
+            echo "::warning::Could not read the Play Books version from Google Play."
+          fi
+          echo "version=$latest" >> "$GITHUB_OUTPUT"
+
+      - name: Open an issue for an unsupported version
+        if: steps.latest.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LATEST: ${{ steps.latest.outputs.version }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          constants=patches/src/main/kotlin/app/bookspiko/patches/books/shared/Constants.kt
+          echo "Supported:"
+          grep -oE 'version = "[^"]+"' "$constants"
+          if grep -qF "version = \"$LATEST\"" "$constants"; then
+            echo "$LATEST is already supported."
+            exit 0
+          fi
+          title="Play Books $LATEST released"
+          if gh issue list --state all --search "\"$title\" in:title" --json title -q '.[].title' | grep -qxF "$title"; then
+            echo "An issue for $LATEST already exists."
+            exit 0
+          fi
+          gh issue create --title "$title" --body "$(cat <<EOF
+          @$OWNER Google Play has Play Books **$LATEST**, which the patches do not list yet.
+
+          1. Patch the new APKM with the latest release and check sign-in, the reader font and Settings > Ebook reading > Custom font.
+          2. If everything works, add it to \`COMPATIBILITY_PLAY_BOOKS\` in \`$constants\` (or ask Claude to bump the version).
+          3. If a patch fails, its fingerprint name and reason are in the patcher output.
+          EOF
+          )"

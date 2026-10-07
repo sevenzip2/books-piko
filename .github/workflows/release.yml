@@ -9,6 +9,13 @@ on:
   push:
     branches:
       - main
+    # Only changes to the patch bundle publish a release.
+    paths:
+      - "patches/**"
+      - "extensions/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
   workflow_dispatch:
 
 permissions:
