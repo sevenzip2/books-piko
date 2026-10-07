@@ -59,7 +59,6 @@ private fun customReaderFontResourcePatch(
                 "android:label" to "Books 글꼴",
                 "android:exported" to "true",
                 "android:theme" to "@android:style/Theme.DeviceDefault.DayNight",
-                "android:taskAffinity" to "app.bookspiko.font",
                 "android:excludeFromRecents" to "false",
             )
 
@@ -96,16 +95,17 @@ private fun customReaderFontResourcePatch(
 val customReaderFontPatch = bytecodePatch(
     name = "Custom reader font",
     description = "Replaces the fonts of the EPUB reader with a TTF/OTF you pick on the device " +
-        "(\"Books 글꼴\" launcher entry, or open/share a font file with Play Books). " +
+        "(Settings > Ebook reading > Custom font, or open/share a font file with Play Books). " +
         "Optionally forces it over publisher fonts while keeping bold, italic and monospace text.",
 ) {
     compatibleWith(COMPATIBILITY_PLAY_BOOKS)
 
     val launcherShortcutOption = booleanOption(
         key = "fontSettingsLauncherShortcut",
-        default = true,
+        default = false,
         title = "Font settings launcher shortcut",
-        description = "Adds a \"Books 글꼴\" icon to the launcher to pick or remove the reader font.",
+        description = "Also adds a \"Books 글꼴\" launcher icon. The font settings are always available in " +
+            "Play Books under Settings > Ebook reading > Custom font.",
     )
 
     val bundledFontOption = stringOption(
@@ -135,5 +135,7 @@ val customReaderFontPatch = bytecodePatch(
                 ExternalLabel("original", getInstruction(0)),
             )
         }
+
+        addFontSettingsEntry()
     }
 }

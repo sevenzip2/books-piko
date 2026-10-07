@@ -149,6 +149,21 @@ internal object BaseBooksActivityAccountFromIntentFingerprint : Fingerprint(
 )
 
 /**
+ * Account selected in the app, restored from SharedPreferences ("account" = name) as
+ * `Account(name, "com.google")`. The account list compares name and type, so with a GmsCore account
+ * the saved one never matched and the account picker opened on every start.
+ */
+internal object SavedAccountFingerprint : Fingerprint(
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
+    parameters = listOf("L", "Landroid/content/SharedPreferences;"),
+    strings = listOf("account", "com.google"),
+    filters = listOf(
+        methodCall(smali = "Landroid/content/SharedPreferences;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"),
+        newInstance("Landroid/accounts/Account;"),
+    ),
+)
+
+/**
  * `AppSingleton.getAccountComponent(Account)` keys a ConcurrentMap by the whole Account,
  * so `(email, com.google)` and `(email, app.revanced)` would create two components that
  * open the same per-email DataStore files and crash.

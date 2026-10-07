@@ -44,6 +44,30 @@
 나머지 `Account(name, "com.google")` 생성은 대부분 `AppSingleton` 정규화를 거칩니다.
 이 부분은 선택 패치인 *GmsCore account type (extended)* 에서 일괄 변경할 수 있습니다.
 
+### 저장된 계정 (`oyw`)
+
+앱은 고른 계정 이름을 SharedPreferences `account`에 저장하고, 다음 실행 때 `Account(이름, "com.google")`로 복원합니다(`oyw.<init>`).
+저장된 계정을 계정 목록과 맞춰 보는 `oxx.a`는 **이름과 타입**을 둘 다 비교합니다. 그래서 GmsCore 계정(`app.revanced`)과는 한 번도 맞지 않았고, 실행할 때마다 계정 선택 창이 떴습니다.
+복원 타입도 GmsCore 타입으로 바꿉니다(`SavedAccountFingerprint`).
+
+## 설정 화면 항목
+
+Play 북 설정 화면은 Compose로 되어 있습니다. 구성은 다음과 같습니다.
+- 정적 트리 `ajft.a`: `CategoryNode`/`ItemNode`이고, 클래스 이름이 난독화되지 않았습니다. 노드는 enum `ajfr` 값을 가리킵니다. enum 값의 이름(`READING_CATEGORY`, `ABOUT_PLAY_BOOKS` 등)은 남아 있습니다.
+- Dagger가 만든 `Map<ajfr, 항목>`: `ajfy.a()`에서 설정 화면으로 넘어갑니다.
+
+"사용자 글꼴" 항목은 이렇게 넣습니다.
+1. `ajfy.a()`에서 Map을 받은 직후 `SettingsHook.registerFontItem(트리, Map)`을 호출합니다.
+   - 트리와 Map 어디에도 쓰이지 않는 enum 값을 하나 고릅니다. 이 버전에서는 `GENERAL_HEADER`이고, 앱 코드 어디서도 참조하지 않습니다.
+   - `READING_CATEGORY` 노드의 자식 목록 끝에 그 값의 `ItemNode`를 추가합니다.
+   - Map에는 그 값으로 "Google Play 북 정보" 행 클래스의 새 인스턴스를 넣습니다.
+2. 정보 행의 Compose 모델 함수에 훅을 넣습니다(`AboutSettingsItemFingerprint`, `resourceLiteral(about_play_books_settings_title)`로 찾음).
+   - 제목과 부제를 바꿀 수 있게 합니다.
+   - 클릭 람다는 맨 앞에서 `SettingsHook.onClick`을 확인합니다.
+   - 새로 만든 인스턴스일 때만 "사용자 글꼴" 제목, 현재 글꼴 이름 부제, 글꼴 설정 화면 열기로 동작합니다.
+
+이렇게 하면 Compose UI 코드를 새로 만들지 않고 기존 행 모양을 그대로 씁니다.
+
 ## 2. 리더 렌더링 경로
 
 EPUB 리플로우 본문은 **WebView**가 그립니다.

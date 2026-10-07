@@ -15,7 +15,7 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
 | 패치 | 기본값 | 설명 |
 |---|---|---|
 | GmsCore support | 켜짐 | 계정 조회, 토큰(GetToken), 계정 선택기만 GmsCore로 보냅니다. clearcut, phenotype 같은 나머지 Play 서비스 API는 설치된 Play 서비스를 그대로 씁니다. |
-| Custom reader font | 켜짐 | 리더 WebView의 글꼴 요청을 사용자 글꼴로 바꿉니다. 기기에서 글꼴을 고르는 "Books 글꼴" 화면이 추가됩니다. |
+| Custom reader font | 켜짐 | 리더 WebView의 글꼴 요청을 사용자 글꼴로 바꿉니다. Play 북 **설정 → Ebook reading → 사용자 글꼴**에서 글꼴을 고릅니다. |
 | GmsCore account type (extended) | 꺼짐 | 실험 기능입니다. 앱 안에 남아 있는 `Account(name, "com.google")` 생성(업로드, 컬렉션, 고객센터 페이지, 백그라운드 동기화)도 GmsCore 계정 타입으로 바꿉니다. |
 
 ### GmsCore support 옵션
@@ -26,7 +26,7 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
 
 ### Custom reader font 옵션
 
-- `fontSettingsLauncherShortcut` (기본값 켜짐): 런처에 "Books 글꼴" 아이콘을 추가합니다.
+- `fontSettingsLauncherShortcut` (기본값 꺼짐): 설정 화면 항목과 별도로 런처에 "Books 글꼴" 아이콘도 추가합니다.
 - `bundledFontPath` (선택): 패치할 때 APK에 넣을 TTF/OTF 파일 경로입니다. 기기에서 글꼴을 고르기 전까지 이 글꼴을 씁니다.
 
 ## 사용 방법
@@ -52,7 +52,7 @@ NPatch 같은 도구를 함께 쓸 때는 전체 **MicroG/GMS redirect를 꺼야
 
 ## 사용자 글꼴
 
-- 런처의 **Books 글꼴**에서 기본(Regular) 글꼴을 고릅니다. 굵게/기울임/굵은 기울임 글꼴은 선택 사항입니다.
+- Play 북 **설정 → Ebook reading → 사용자 글꼴**에서 기본(Regular) 글꼴을 고릅니다. 굵게/기울임/굵은 기울임 글꼴은 선택 사항입니다.
   따로 넣지 않으면 기본 글꼴에서 자동으로 합성됩니다.
 - 파일 관리자에서 글꼴 파일을 **Play 북으로 열기/공유**해도 기본 글꼴로 설치됩니다.
 - 설정 항목:
@@ -60,7 +60,7 @@ NPatch 같은 도구를 함께 쓸 때는 전체 **MicroG/GMS redirect를 꺼야
   - **출판사 지정 글꼴 대신 강제 적용**: 리더에서 무엇을 고르든(출판사 기본 포함) 사용자 글꼴을 씁니다.
   - **굵은 글씨를 외곽선으로 표시** (기본 켜짐): 굵게 글꼴 파일을 넣지 않았을 때 굵은 글씨에 얇은 외곽선(`-webkit-text-stroke`)을 그립니다. 일부 Android WebView는 웹 글꼴의 굵게를 합성하지 않아서 넣었습니다. 글자 폭은 바뀌지 않습니다.
   - **코드/고정폭 글꼴 유지**: `pre`, `code`, `kbd`, `samp`, `tt`는 강제 적용에서 뺍니다.
-- 글꼴이나 설정을 바꾼 뒤에는 설정 화면의 **Play 북 다시 시작** 버튼을 누르세요. 리더가 앱이 켜져 있는 동안 글꼴을 캐시합니다.
+- 글꼴이나 설정을 바꾼 뒤에는 글꼴 화면의 **Play 북 다시 시작** 버튼을 누르세요. 리더가 앱이 켜져 있는 동안 글꼴을 캐시합니다.
 - 확인: `adb logcat -s BooksPiko`에 `Serving custom font`가 보이면 적용된 것입니다.
 
 동작 방식은 [docs/ANALYSIS.md](docs/ANALYSIS.md)를 보세요.

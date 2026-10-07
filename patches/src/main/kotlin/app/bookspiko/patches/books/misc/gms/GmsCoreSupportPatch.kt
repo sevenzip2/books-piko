@@ -181,6 +181,9 @@ val gmsCoreSupportPatch = bytecodePatch(
             )
         }
 
+        // Remember the selected account across starts (see SavedAccountFingerprint).
+        SavedAccountFingerprint.method.replaceStringLiteral(GOOGLE_ACCOUNT_TYPE, accountType, accountConstructorType)
+
         BaseBooksActivityAccountFromIntentFingerprint.method.replaceStringLiteral(
             GOOGLE_ACCOUNT_TYPE,
             accountType,
