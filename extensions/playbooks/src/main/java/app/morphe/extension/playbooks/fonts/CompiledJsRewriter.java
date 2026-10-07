@@ -34,6 +34,14 @@ public final class CompiledJsRewriter {
     private static final Pattern OVERRIDE_ASSIGNMENT = Pattern.compile(
             "(\\w+)&&\\(\\1=\\w+\\(\\1,\"\\\\\"'\"\\),\\1=\\1==\"serif\"\\?\"literata\":\\1\\);this\\.(\\w+)=\\1;");
 
+    /**
+     * Builder of the @font-face rules the app passes in at runtime (e.g. "gpb-literata" bold and
+     * italic faces, used with the publisher default font): {@code J(c,function(d){b.push(["@font-face {",}
+     * Group 1 is the font descriptor, group 2 the rule list.
+     */
+    private static final Pattern DYNAMIC_FACE_BUILDER = Pattern.compile(
+            "function\\((\\w+)\\)\\{(\\w+)\\.push\\(\\[\"@font-face \\{\",");
+
     static final String DEFAULT_BODY_RULE = "body { font-family: literata; }";
     static final String CHOSEN_FONT_RULE_START = "'* { font-family: \"'";
 
@@ -81,6 +89,19 @@ public final class CompiledJsRewriter {
         String rewritten = result.toString();
         summary.append("removedFaces=").append(removedFaces);
 
+        // Same rule for the faces built at runtime.
+        Matcher builder = DYNAMIC_FACE_BUILDER.matcher(rewritten);
+        if (builder.find()) {
+            String descriptor = builder.group(1);
+            String rules = builder.group(2);
+            String replacement = "function(" + descriptor + "){" + skipFaceExpression(config, descriptor + ".url")
+                    + "||" + rules + ".push([\"@font-face {\",";
+            rewritten = rewritten.substring(0, builder.start()) + replacement + rewritten.substring(builder.end());
+            summary.append(" dynamicFaces=filtered");
+        } else {
+            summary.append(" dynamicFaces=NOT_FOUND");
+        }
+
         // Pin the engine's font override to the replaced default family.
         if (config.forceOverPublisherFonts || config.replaceAllFamilies) {
             Matcher override = OVERRIDE_ASSIGNMENT.matcher(rewritten);
@@ -110,5 +131,24 @@ public final class CompiledJsRewriter {
         }
 
         return new Result(rewritten, summary.toString());
+    }
+
+    /**
+     * JavaScript expression that is true for a bold/italic face of a replaced family without a
+     * custom file. Mirrors {@link FontVariant#ofFileName} and {@link FontConfig#replaces}.
+     */
+    static String skipFaceExpression(FontConfig config, String urlExpression) {
+        return "(function(u){var m=/\\/fonts\\/([^\\/?#]+)/.exec(u||\"\");if(!m)return!1;"
+                + "var f=m[1].toLowerCase(),b=f.indexOf(\"bold\")>=0,i=f.indexOf(\"italic\")>=0;"
+                + "if(!(b||i))return!1;"
+                + (config.replaceAllFamilies ? "" : "if(f.indexOf(\"" + FontConfig.DEFAULT_FAMILY_FILE_PREFIX + "\")!=0)return!1;")
+                + "return b&&i?" + js(!config.availableVariants.contains(FontVariant.BOLD_ITALIC))
+                + ":b?" + js(!config.availableVariants.contains(FontVariant.BOLD))
+                + ":" + js(!config.availableVariants.contains(FontVariant.ITALIC))
+                + "})(" + urlExpression + ")";
+    }
+
+    private static String js(boolean value) {
+        return value ? "!0" : "!1";
     }
 }
