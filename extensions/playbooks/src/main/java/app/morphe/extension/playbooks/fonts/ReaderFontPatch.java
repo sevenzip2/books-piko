@@ -53,7 +53,10 @@ public final class ReaderFontPatch {
 
             Context context = view.getContext();
             FontStore store = FontStore.get(context);
-            if (!store.isActive()) return null;
+            if (!store.isActive()) {
+                if (isEngine) Log.i(TAG, "Custom reader font inactive (disabled or no font picked)");
+                return null;
+            }
 
             return isFont
                     ? fontResponse(store, path.substring(FONTS_PATH.length()))
@@ -75,7 +78,9 @@ public final class ReaderFontPatch {
         FontConfig config = store.config();
         if (!config.replaces(fileName)) return null;
 
-        InputStream input = new BufferedInputStream(store.open(FontVariant.ofFileName(fileName)));
+        FontVariant variant = FontVariant.ofFileName(fileName);
+        Log.i(TAG, "Serving custom font (" + variant.key + ") for " + fileName);
+        InputStream input = new BufferedInputStream(store.open(variant));
         String mimeType = FontFiles.detectMimeType(FontFiles.peekHeader(input));
         if (mimeType == null) mimeType = "font/ttf";
 
@@ -91,8 +96,10 @@ public final class ReaderFontPatch {
             String signature = config.signature();
             if (!signature.equals(cachedSignature) || cachedEngine == null) {
                 String original = new String(readAsset(context, ENGINE_ASSET), UTF_8);
-                cachedEngine = CompiledJsRewriter.rewrite(original, config).getBytes(UTF_8);
+                CompiledJsRewriter.Result result = CompiledJsRewriter.rewrite(original, config);
+                cachedEngine = result.js.getBytes(UTF_8);
                 cachedSignature = signature;
+                Log.i(TAG, "Reader engine rewritten: " + result.summary + " (" + signature + ")");
             }
             engine = cachedEngine;
         }

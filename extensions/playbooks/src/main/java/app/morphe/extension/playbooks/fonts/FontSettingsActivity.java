@@ -3,8 +3,10 @@ package app.morphe.extension.playbooks.fonts;
 import static app.morphe.extension.playbooks.shared.Text.t;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -102,15 +104,16 @@ public class FontSettingsActivity extends Activity {
                         store.setEnabled(value);
                     }
                 });
-        addCheckBox(t("모든 리더 글꼴 대체 (끄면 기본 글꼴 Literata만 대체)",
-                        "Replace every reader font (off: only the default Literata)"),
+        addCheckBox(t("리더에서 고른 글꼴도 모두 대체 (끄면 Literata/세리프만)",
+                        "Replace any font chosen in the reader (off: only Literata/serif)"),
                 store.replaceAllFamilies(), new Toggle() {
                     @Override
                     public void set(boolean value) {
                         store.setReplaceAllFamilies(value);
                     }
                 });
-        addCheckBox(t("출판사 지정 글꼴 대신 강제 적용", "Force over publisher fonts"),
+        addCheckBox(t("출판사 글꼴 대신 항상 적용 (리더 글꼴 선택 무시)",
+                        "Always use it, over publisher fonts and the reader's font choice"),
                 store.forceOverPublisherFonts(), new Toggle() {
                     @Override
                     public void set(boolean value) {
@@ -127,11 +130,21 @@ public class FontSettingsActivity extends Activity {
 
         addSpacer();
 
+        Button restart = new Button(this);
+        restart.setText(t("Play 북 다시 시작 (변경 사항 적용)", "Restart Play Books (apply changes)"));
+        restart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                restartApp();
+            }
+        });
+        content.addView(restart);
+
         content.addView(text(t(
-                "변경 사항은 책을 다시 열 때 적용됩니다. 쪽 나눔이 이상하면 리더 화면 설정에서 글자 크기를 한 번 바꿔 보세요.\n"
+                "리더는 글꼴과 엔진을 앱이 켜져 있는 동안 캐시합니다. 글꼴이나 설정을 바꾼 뒤에는 위 버튼으로 Play 북을 다시 시작하세요.\n"
                         + "다른 앱에서 글꼴 파일을 'Play 북'으로 열기/공유해도 기본 글꼴로 설치됩니다.",
-                "Changes apply when a book is reopened. If pagination looks off, change the text size once "
-                        + "in the reader display settings.\n"
+                "The reader caches fonts and its engine while the app runs. Restart Play Books with the button "
+                        + "above after changing the font or settings.\n"
                         + "You can also open or share a font file with Play Books to install it as the regular face."),
                 13));
     }
@@ -283,8 +296,8 @@ public class FontSettingsActivity extends Activity {
                             message = t("TTF/OTF 글꼴 파일이 아닙니다.", "Not a TTF/OTF font file.");
                         } else {
                             store.save(variant, input, name);
-                            message = t("글꼴을 적용했습니다. 책을 다시 열어 주세요.",
-                                    "Font applied. Reopen the book to see it.");
+                            message = t("글꼴을 저장했습니다. 'Play 북 다시 시작'을 누르세요.",
+                                    "Font saved. Tap \"Restart Play Books\".");
                         }
                     } finally {
                         input.close();
@@ -321,6 +334,23 @@ public class FontSettingsActivity extends Activity {
         }
         String segment = uri.getLastPathSegment();
         return segment != null ? segment : "font";
+    }
+
+    private void restartApp() {
+        try {
+            // The "Books 글꼴" alias is a launcher entry too, so pick the app's own one.
+            Intent main = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setPackage(getPackageName());
+            for (ResolveInfo info : getPackageManager().queryIntentActivities(main, 0)) {
+                if (info.activityInfo.name.startsWith(FontSettingsActivity.class.getName())) continue;
+                startActivity(Intent.makeRestartActivityTask(
+                        new ComponentName(info.activityInfo.packageName, info.activityInfo.name)));
+                break;
+            }
+        } catch (Throwable throwable) {
+            Log.e(FontStore.TAG, "Restart failed", throwable);
+        }
+        // Ends the process so the reader WebViews reload the font and the engine.
+        Runtime.getRuntime().exit(0);
     }
 
     private void toast(String message) {

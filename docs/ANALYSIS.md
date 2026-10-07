@@ -67,11 +67,14 @@ EPUB 리플로우 본문은 **WebView**가 그립니다.
 1. `/fonts/<file>` 요청은 대체 대상 family(전체, 또는 literata만)이면 사용자 글꼴 파일로 응답합니다.
    파일 이름의 bold/italic에 맞는 변형이 있으면 그것을 쓰고, 없으면 regular를 씁니다.
 2. `/assets/compiled.js` 요청은 원본을 읽어 다음처럼 고친 뒤 응답합니다(설정별로 캐시).
+   - 엔진에는 글꼴 강제 기능이 있습니다. 리더에서 글꼴 `Z`를 고르면 `* { font-family: "Z" !important; }`를 넣고, 출판사 CSS의 모든 `font-family` 앞에 `Z`를 붙이고, 다른 이름의 `@font-face`는 지웁니다(`Pi`). 그래서 별도 이름의 글꼴을 주입하면 지워지거나 `Z`에 밀립니다.
+   - 대신 글꼴 설정 생성자(`Dj`)의 `this.Z=` 대입을 고칩니다. 강제 적용이면 항상 `"literata"`, 모든 글꼴 대체면 무엇을 고르든 `"literata"`로 바꿉니다. `literata` 파일은 1번에서 사용자 글꼴로 응답하므로, 레이아웃과 표시 모두 엔진 자체 경로로 사용자 글꼴을 씁니다.
    - 대체 대상 family의 bold/italic `@font-face` 중 해당 사용자 파일이 없는 것은 지웁니다. 그러면 브라우저가 regular에서 굵게/기울임을 합성합니다.
-   - 강제 적용을 켜면 `body { font-family: literata; }`를 `<selector> { font-family: literata !important; }`로 바꿉니다.
-   - 고정폭 유지를 켜면 `*` 선택자를 `*:not(pre):not(code):not(kbd):not(samp):not(tt):not(pre *):not(code *)`로 바꿉니다.
+   - 고정폭 유지를 켜면 주입 규칙의 `*` 선택자를 `*:not(pre):not(code):not(kbd):not(samp):not(tt):not(pre *):not(code *)`로 바꿉니다.
 
-   고칠 문자열을 찾지 못하면(엔진이 바뀐 경우) 그 단계만 건너뜁니다. 1번의 글꼴 교체는 그대로 동작합니다.
+   고칠 문자열을 찾지 못하면(엔진이 바뀐 경우) 그 단계만 건너뜁니다. 이때도 1번의 파일 교체는 동작합니다.
+   처리 결과는 logcat 태그 `BooksPiko`로 남습니다(`Reader engine rewritten: …`, `Serving custom font …`).
+3. WebView는 프로세스가 살아 있는 동안 엔진과 글꼴을 캐시합니다. 그래서 글꼴 설정 화면의 "Play 북 다시 시작" 버튼이 프로세스를 끝내고 앱을 다시 엽니다.
 
 글꼴은 `files/books_piko_fonts/`에, 설정은 SharedPreferences `books_piko_font`에 저장합니다.
 TTF, OTF, TTC, WOFF, WOFF2를 파일 시그니처로 확인합니다.
