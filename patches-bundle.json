@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-10-08T14:39:20",
-  "description": "## v0.1.6\n\n* GmsCore support: run the library sync adapter for the GmsCore account ([5794d74](https://github.com/sevenzip2/books-piko/commit/5794d74ea4799b81570346485a0a2309a99d8ab9))\n",
-  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.6/patches-0.1.6.mpp",
-  "version": "0.1.6"
+  "created_at": "2026-10-08T14:59:40",
+  "description": "## v0.1.7\n\n* List only the newest Play Books version so Manager recommends it ([e2fea84](https://github.com/sevenzip2/books-piko/commit/e2fea84efb1d7cf6b8792479c93164046b4e9947))\n",
+  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.7/patches-0.1.7.mpp",
+  "version": "0.1.7"
 }
