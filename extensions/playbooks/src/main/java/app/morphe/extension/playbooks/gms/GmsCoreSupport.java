@@ -33,6 +33,16 @@ public final class GmsCoreSupport {
     }
 
     /**
+     * Replaces the app's query for supervised (Family Link) accounts.
+     * Google Play services refuses that query from the re-signed app, and the app then assumes a
+     * supervised account and hides Shop, Wishlist and the Shelves tab. GmsCore cannot tell
+     * supervised accounts apart, so report none.
+     */
+    public static Account[] supervisedAccounts() {
+        return new Account[0];
+    }
+
+    /**
      * Injected after super.onResume() of the base activity.
      * GmsCore only lists accounts to apps holding GET_ACCOUNTS, a runtime permission.
      * Without it the app finds no account and stays on the sign-in screen.

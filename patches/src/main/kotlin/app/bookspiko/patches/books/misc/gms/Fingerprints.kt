@@ -175,4 +175,16 @@ internal object AppSingletonGetAccountComponentFingerprint : Fingerprint(
     custom = { method, _ -> !AccessFlags.BRIDGE.isSet(method.accessFlags) },
 )
 
+/**
+ * Accounts that are supervised (Family Link, "service_uca"). If the query fails and no earlier answer
+ * is stored, the app assumes a supervised account ("UnicornAccountDefaults__is_unicorn" defaults to
+ * true) and hides Shop, Wishlist and the Shelves, Series and Upcoming tabs. With a GmsCore account
+ * the query goes to Google Play services, which refuses the re-signed app.
+ */
+internal object SupervisedAccountsFingerprint : Fingerprint(
+    returnType = "[Landroid/accounts/Account;",
+    parameters = listOf(),
+    strings = listOf("service_uca", "Found a unicorn account that can make purchases."),
+)
+
 // endregion

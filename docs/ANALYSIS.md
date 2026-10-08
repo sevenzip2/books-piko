@@ -50,6 +50,17 @@
 저장된 계정을 계정 목록과 맞춰 보는 `oxx.a`는 **이름과 타입**을 둘 다 비교합니다. 그래서 GmsCore 계정(`app.revanced`)과는 한 번도 맞지 않았고, 실행할 때마다 계정 선택 창이 떴습니다.
 복원 타입도 GmsCore 타입으로 바꿉니다(`SavedAccountFingerprint`).
 
+### 자녀(감독) 계정 판정 (`oyj.j`)
+
+앱은 `service_uca` 기능이 있는 계정(Family Link 감독 계정, 앱 안에서는 "unicorn")을 조회해서 자녀 계정인지 판단합니다.
+자녀 계정이면 하단의 쇼핑·위시리스트와 라이브러리의 서가·시리즈·예정 탭을 숨깁니다(플래그 `ShowShopToUnicorns__is_enabled`).
+
+이 조회가 실패하고 저장된 값(`ucaState`)도 없으면 앱은 자녀 계정으로 가정합니다. `UnicornAccountDefaults__is_unicorn`의 기본값이 `true`입니다.
+재서명한 앱에서는 1차 앱 경로(GoogleAuthClient)가 Google Play 서비스에 거부되어 조회가 실패합니다. 그래서 일반 계정에서도 이 탭들이 사라졌습니다.
+
+GmsCore는 감독 계정을 구분하지 못하므로, 조회 메서드(`SupervisedAccountsFingerprint`)가 빈 배열을 돌려주게 합니다.
+다음 판정에서 `ucaState=false`가 저장되어, 이전에 잘못 저장된 값도 바로잡힙니다.
+
 ## 설정 화면 항목
 
 Play 북 설정 화면은 Compose로 되어 있습니다. 구성은 다음과 같습니다.

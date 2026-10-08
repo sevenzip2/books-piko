@@ -238,5 +238,18 @@ val gmsCoreSupportPatch = bytecodePatch(
         }
 
         // endregion
+
+        // region Not a supervised account (see SupervisedAccountsFingerprint).
+
+        SupervisedAccountsFingerprint.method.addInstructions(
+            0,
+            """
+                invoke-static { }, $GMS_EXTENSION_CLASS->supervisedAccounts()[Landroid/accounts/Account;
+                move-result-object v0
+                return-object v0
+            """,
+        )
+
+        // endregion
     }
 }
