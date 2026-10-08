@@ -17,6 +17,8 @@ internal fun gmsCoreSupportResourcePatch(
         val vendor = vendorGroupIdOption.value!!
         val gmsCorePackage = "$vendor.android.gms"
 
+        var syncAdapterResource: String? = null
+
         document("AndroidManifest.xml").use { document ->
             val manifest = document.documentElement
 
@@ -52,6 +54,14 @@ internal fun gmsCoreSupportResourcePatch(
             val application = document.getElementsByTagName("application").item(0) as Element?
                 ?: throw PatchException("<application> not found in AndroidManifest.xml")
 
+            val metaData = document.getElementsByTagName("meta-data")
+            for (i in 0 until metaData.length) {
+                val item = metaData.item(i) as Element
+                if (item.getAttribute("android:name") == "android.content.SyncAdapter") {
+                    syncAdapterResource = item.getAttribute("android:resource")
+                }
+            }
+
             // GmsCore checks these to impersonate the original app towards Google (OAuth client).
             application.child(
                 "meta-data",
@@ -63,6 +73,20 @@ internal fun gmsCoreSupportResourcePatch(
                 "android:name" to "$vendor.android.gms.SPOOFED_PACKAGE_SIGNATURE",
                 "android:value" to spoofedSignatureOption.value!!,
             )
+        }
+
+        // The library sync adapter is declared for "com.google" accounts. Android only runs a sync
+        // adapter for accounts of its type, so the sync the app requests for the GmsCore account was
+        // dropped: shelves and other library data never downloaded on a fresh install.
+        val syncAdapter = syncAdapterResource?.removePrefix("@")
+            ?: throw PatchException("Sync adapter not found in AndroidManifest.xml")
+        document("res/$syncAdapter.xml").use { document ->
+            val adapter = document.documentElement
+            val accountType = adapter.getAttribute("android:accountType")
+            if (accountType != GOOGLE_ACCOUNT_TYPE) {
+                throw PatchException("Unexpected sync adapter account type: $accountType")
+            }
+            adapter.setAttribute("android:accountType", vendor)
         }
     }
 }

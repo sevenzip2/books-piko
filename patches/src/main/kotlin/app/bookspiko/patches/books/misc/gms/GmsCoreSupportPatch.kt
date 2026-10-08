@@ -22,7 +22,7 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 
-private const val GOOGLE_ACCOUNT_TYPE = "com.google"
+internal const val GOOGLE_ACCOUNT_TYPE = "com.google"
 private const val GOOGLE_PLAY_SERVICES_PACKAGE = "com.google.android.gms"
 private const val GOOGLE_ACCOUNTS_AUTHORITY = "com.google.android.gms.auth.accounts"
 

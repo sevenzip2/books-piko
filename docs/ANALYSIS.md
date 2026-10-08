@@ -16,6 +16,13 @@
 | `<queries>`에 `app.revanced.android.gms` 패키지와 `…auth.accounts` provider 추가 | 패키지 가시성 |
 | `app.revanced.android.gms.SPOOFED_PACKAGE_NAME` / `…SIGNATURE` meta-data | GmsCore가 원래 앱으로 위장해 OAuth 수행 |
 
+### 동기화 어댑터 (`res/xml/syncadapter.xml`)
+
+라이브러리 동기화(`SyncService`)는 `accountType="com.google"`인 동기화 어댑터로 선언되어 있습니다.
+안드로이드는 같은 타입의 계정에만 동기화 어댑터를 실행합니다. 그래서 앱이 GmsCore 계정으로 요청한 동기화(`ContentResolver.requestSync`)가 무시되었습니다.
+그 결과 앱을 새로 설치하거나 저장공간을 지운 뒤 서가 같은 라이브러리 데이터가 내려오지 않았습니다.
+리소스 패치가 동기화 어댑터의 계정 타입을 GmsCore 계정 타입(`app.revanced`)으로 바꿉니다.
+
 ### 바이트코드
 
 | Fingerprint | 이 버전의 위치 | 찾는 방법 | 변경 |
