@@ -26,10 +26,12 @@ object Constants {
             "f0fd6c5b410f25cb25c3b53346c8972fae30f8ee7411df910480ad6b2d60db83",
         ),
         targets = listOf(
-            // Play Books puts the version code in its version name.
+            // List only the newest version, and replace it when bumping.
+            // Play Books puts the build number in its version name ("2026.9.18.0 (389836)"), so Morphe
+            // cannot compare the names as numbers and sorts them as text: "2026.9.4.2 (…)" sorts
+            // above "2026.9.18.0 (…)" and Morphe Manager would recommend the older one. The target
+            // without a version below still lets other versions be patched.
             AppTarget(version = "2026.9.18.0 (389836)", versionCode = 389836, minSdk = 32),
-            AppTarget(version = "2026.9.4.2 (386876)", versionCode = 386876, minSdk = 32),
-            AppTarget(version = "2026.9.4.1 (386871)", versionCode = 386871, minSdk = 32),
             AppTarget(version = null, versionCodes = null, isExperimental = true),
         ),
     )

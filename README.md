@@ -31,7 +31,7 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
 
 ## 사용 방법
 
-1. Play 북 split APK(APKM/APKS)를 준비합니다. 지원 버전은 `2026.9.18.0 (389836)`(추천), `2026.9.4.2 (386876)`, `2026.9.4.1 (386871)`입니다.
+1. Play 북 split APK(APKM/APKS)를 준비합니다. 지원 버전은 `2026.9.18.0 (389836)`입니다. 다른 버전도 패치할 수 있지만 Manager에는 지원 목록 밖 버전으로 표시됩니다.
 2. 패치합니다. 셋 중 하나를 고르세요.
    - **Morphe Manager (링크)**: 폰에서 아래 링크를 열면 Manager에 패치 소스로 추가됩니다. 새 버전이 나오면 Manager가 알아서 업데이트합니다.
 
@@ -88,7 +88,7 @@ NPatch 같은 도구를 함께 쓸 때는 전체 **MicroG/GMS redirect를 꺼야
 1. 새 APKM으로 패치를 실행합니다. 실패한 패치는 fingerprint 이름과 이유
    (예: `Expected 1 occurrence(s) of "com.google" in Lpir;->onResume but found 2`)를 출력합니다.
 2. [docs/ANALYSIS.md](docs/ANALYSIS.md)의 패치 지점 표를 보고 새 버전에서 같은 의미의 코드를 찾아 fingerprint를 고칩니다.
-3. `patches/.../shared/Constants.kt`의 `COMPATIBILITY_PLAY_BOOKS`에 버전을 추가합니다.
+3. `patches/.../shared/Constants.kt`의 `COMPATIBILITY_PLAY_BOOKS`에서 버전을 새 버전으로 바꿉니다. 버전은 하나만 둡니다(이유는 그 파일의 주석 참고).
 
 ## 라이선스
 
