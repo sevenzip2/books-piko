@@ -90,11 +90,6 @@ NPatch 같은 도구를 함께 쓸 때는 전체 **MicroG/GMS redirect를 꺼야
 2. [docs/ANALYSIS.md](docs/ANALYSIS.md)의 패치 지점 표를 보고 새 버전에서 같은 의미의 코드를 찾아 fingerprint를 고칩니다.
 3. `patches/.../shared/Constants.kt`의 `COMPATIBILITY_PLAY_BOOKS`에 버전을 추가합니다.
 
-## 주의
-
-- Google Play 북 APK와 디컴파일 결과는 Google 저작물입니다. 공개 저장소나 패치 번들에 넣지 마세요.
-- OAuth 토큰, 비밀번호, 세션 쿠키가 들어 있는 로그를 공유하지 마세요.
-
 ## 라이선스
 
 GPLv3. Morphe와 Piko의 구조를 참고했습니다.
