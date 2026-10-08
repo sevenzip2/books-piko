@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-10-08T14:07:55",
-  "description": "## v0.1.4\n\n* Custom reader font: plain labels for the two override options ([fa58d82](https://github.com/sevenzip2/books-piko/commit/fa58d827252751b6f919436dafddb52cfc107507))\n* README: remove the caution section ([bc5cfb2](https://github.com/sevenzip2/books-piko/commit/bc5cfb25f064337cd0fb7a630b437c4a8e191e85))\n",
-  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.4/patches-0.1.4.mpp",
-  "version": "0.1.4"
+  "created_at": "2026-10-08T14:18:43",
+  "description": "## v0.1.5\n\n* GmsCore support: do not treat the account as a supervised account ([f7d85e5](https://github.com/sevenzip2/books-piko/commit/f7d85e530fb8bec77b008a0126760c1147a1e52f))\n",
+  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.5/patches-0.1.5.mpp",
+  "version": "0.1.5"
 }
