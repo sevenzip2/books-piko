@@ -104,16 +104,16 @@ public class FontSettingsActivity extends Activity {
                         store.setEnabled(value);
                     }
                 });
-        addCheckBox(t("리더에서 고른 글꼴도 모두 대체 (끄면 Literata/세리프만)",
-                        "Replace any font chosen in the reader (off: only Literata/serif)"),
+        addCheckBox(t("글꼴 메뉴에서 무엇을 골라도 내 글꼴로 보기\n(끄면 Literata를 골랐을 때만 바뀜)",
+                        "Use my font whichever font I pick in the reader\n(off: only when Literata is picked)"),
                 store.replaceAllFamilies(), new Toggle() {
                     @Override
                     public void set(boolean value) {
                         store.setReplaceAllFamilies(value);
                     }
                 });
-        addCheckBox(t("출판사 글꼴 대신 항상 적용 (리더 글꼴 선택 무시)",
-                        "Always use it, over publisher fonts and the reader's font choice"),
+        addCheckBox(t("책에 들어 있는 글꼴도 무시하고 항상 내 글꼴로 보기",
+                        "Always use my font, even over the book's own fonts"),
                 store.forceOverPublisherFonts(), new Toggle() {
                     @Override
                     public void set(boolean value) {
