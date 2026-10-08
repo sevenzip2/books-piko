@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-10-08T14:18:43",
-  "description": "## v0.1.5\n\n* GmsCore support: do not treat the account as a supervised account ([f7d85e5](https://github.com/sevenzip2/books-piko/commit/f7d85e530fb8bec77b008a0126760c1147a1e52f))\n",
-  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.5/patches-0.1.5.mpp",
-  "version": "0.1.5"
+  "created_at": "2026-10-08T14:39:20",
+  "description": "## v0.1.6\n\n* GmsCore support: run the library sync adapter for the GmsCore account ([5794d74](https://github.com/sevenzip2/books-piko/commit/5794d74ea4799b81570346485a0a2309a99d8ab9))\n",
+  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.6/patches-0.1.6.mpp",
+  "version": "0.1.6"
 }
