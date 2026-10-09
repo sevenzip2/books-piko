@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-10-08T14:59:40",
-  "description": "## v0.1.7\n\n* List only the newest Play Books version so Manager recommends it ([e2fea84](https://github.com/sevenzip2/books-piko/commit/e2fea84efb1d7cf6b8792479c93164046b4e9947))\n",
-  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.7/patches-0.1.7.mpp",
-  "version": "0.1.7"
+  "created_at": "2026-10-09T20:30:11",
+  "description": "## v0.1.8\n\n* GmsCore support: handle GmsCore's SecurityException in the capability check ([f58b840](https://github.com/sevenzip2/books-piko/commit/f58b840a1f55fe9ffb1dd0587553fb7415f8ba5a))\n",
+  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.8/patches-0.1.8.mpp",
+  "version": "0.1.8"
 }
