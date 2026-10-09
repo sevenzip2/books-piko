@@ -68,6 +68,13 @@
 GmsCore는 감독 계정을 구분하지 못하므로, 조회 메서드(`SupervisedAccountsFingerprint`)가 빈 배열을 돌려주게 합니다.
 다음 판정에서 `ucaState=false`가 저장되어, 이전에 잘못 저장된 값도 바로잡힙니다.
 
+### 계정 capability 확인 (`CapabilityFetcherImpl`)
+
+GmsCore는 실제 서명 인증서로 Google 앱인지 판단합니다. 그래서 재서명한 앱이 `getAccounts(features)`나 `hasCapabilities`를 요청하면 `SecurityException`("missing google package permission for ACCOUNT")으로 거부합니다.
+`CapabilityFetcherImpl.getCapabilityForAccount`는 `IOException`만 처리해서, 파일 매니저에서 EPUB을 열 때 앱이 튕겼습니다.
+같은 try 범위에 `SecurityException` 처리를 추가해 `IOException`과 같은 경로(GMS 오류, 캐시 사용)로 보냅니다.
+이 메서드를 찾지 못하면 경고만 남기고 넘어갑니다.
+
 ## 설정 화면 항목
 
 Play 북 설정 화면은 Compose로 되어 있습니다. 구성은 다음과 같습니다.

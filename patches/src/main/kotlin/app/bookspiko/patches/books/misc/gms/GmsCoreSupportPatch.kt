@@ -21,8 +21,10 @@ import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import java.util.logging.Logger
 
 internal const val GOOGLE_ACCOUNT_TYPE = "com.google"
+private const val HAS_CAPABILITIES_REQUEST = "Lcom/google/android/gms/auth/HasCapabilitiesRequest;"
 private const val GOOGLE_PLAY_SERVICES_PACKAGE = "com.google.android.gms"
 private const val GOOGLE_ACCOUNTS_AUTHORITY = "com.google.android.gms.auth.accounts"
 
@@ -236,6 +238,31 @@ val gmsCoreSupportPatch = bytecodePatch(
                 """,
             )
         }
+
+        // endregion
+
+        // region Capability check (see CapabilityFetcherFingerprint).
+
+        // Handle GmsCore's SecurityException like the IOException the app already handles.
+        // Skipped with a warning when not found, so that sign-in still works on other versions.
+        CapabilityFetcherFingerprint.methodOrNull?.let { method ->
+            val implementation = method.implementation!!
+            val call = method.instructions.indexOfFirst { instruction ->
+                instruction.opcode == Opcode.INVOKE_STATIC &&
+                    ((instruction as ReferenceInstruction).reference as MethodReference).parameterTypes
+                        .map { it.toString() } == listOf("Landroid/content/Context;", HAS_CAPABILITIES_REQUEST)
+            }
+            val ioCatch = implementation.tryBlocks.firstOrNull { block ->
+                block.exceptionHandler.exceptionType == "Ljava/io/IOException;" &&
+                    call >= block.start.location.index && call < block.end.location.index
+            } ?: throw PatchException("IOException handler around hasCapabilities not found in ${method.definingClass}")
+            implementation.addCatch(
+                "Ljava/lang/SecurityException;",
+                ioCatch.start,
+                ioCatch.end,
+                ioCatch.exceptionHandler.handler,
+            )
+        } ?: Logger.getLogger(this::class.java.name).warning("Capability check not found, skipped")
 
         // endregion
 

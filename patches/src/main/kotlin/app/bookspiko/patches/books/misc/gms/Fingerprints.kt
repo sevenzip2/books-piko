@@ -176,6 +176,18 @@ internal object AppSingletonGetAccountComponentFingerprint : Fingerprint(
 )
 
 /**
+ * `CapabilityFetcherImpl.getCapabilityForAccount(Account, Boolean)`: asks GoogleAuthUtil whether the
+ * account has a capability and handles an IOException from Google Play services. GmsCore answers
+ * the re-signed app with a SecurityException ("missing google package permission for ACCOUNT"),
+ * which crashed the app, e.g. when opening an EPUB from a file manager.
+ */
+internal object CapabilityFetcherFingerprint : Fingerprint(
+    returnType = "L",
+    parameters = listOf("Landroid/accounts/Account;", "Z"),
+    strings = listOf("getCapabilityForAccount", "Capability IOException for GMS service"),
+)
+
+/**
  * Accounts that are supervised (Family Link, "service_uca"). If the query fails and no earlier answer
  * is stored, the app assumes a supervised account ("UnicornAccountDefaults__is_unicorn" defaults to
  * true) and hides Shop, Wishlist and the Shelves, Series and Upcoming tabs. With a GmsCore account
