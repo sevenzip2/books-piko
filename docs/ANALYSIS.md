@@ -68,6 +68,13 @@
 GmsCore는 감독 계정을 구분하지 못하므로, 조회 메서드(`SupervisedAccountsFingerprint`)가 빈 배열을 돌려주게 합니다.
 다음 판정에서 `ucaState=false`가 저장되어, 이전에 잘못 저장된 값도 바로잡힙니다.
 
+### 계정별 저장 폴더 (`AccountDirectoriesFingerprint`)
+
+계정이 바뀌면(`LOGIN_ACCOUNTS_CHANGED`) `AccountsChangedWorker`가 처리기들을 실행합니다. 그중 `AccountDirectoryAccountsChangedHandlerImpl`은 내장 저장소와 SD 카드의 계정별 폴더(`accounts/<email>`, `ext_accounts/<n>`)를 보고, 기기에 없는 계정의 폴더를 지웁니다.
+폴더 목록은 폴더 이름에서 `Account(email, "com.google")`을 만들고, 기기 계정 목록과 `Account`의 이름과 타입을 함께 비교합니다. GmsCore 계정은 타입이 달라 한 번도 일치하지 않았습니다. 그래서 계정 변경 이벤트가 날 때마다 받은 책 파일과 계정별 로컬 데이터가 지워졌습니다.
+앱 데이터베이스는 남아 있어서, 책을 열면 파일이 없다는 오류가 나고 SD 카드에서는 "SD 카드" 오류가 떴습니다.
+이 메서드의 계정 타입을 GmsCore 계정 타입으로 바꿉니다. 다른 처리기들은 계정 이름만 비교하므로 영향이 없습니다.
+
 ### 계정 capability 확인 (`CapabilityFetcherImpl`)
 
 GmsCore는 실제 서명 인증서로 Google 앱인지 판단합니다. 그래서 재서명한 앱이 `getAccounts(features)`나 `hasCapabilities`를 요청하면 `SecurityException`("missing google package permission for ACCOUNT")으로 거부합니다.

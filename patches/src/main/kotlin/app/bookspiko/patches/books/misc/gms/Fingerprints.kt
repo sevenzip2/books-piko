@@ -176,6 +176,23 @@ internal object AppSingletonGetAccountComponentFingerprint : Fingerprint(
 )
 
 /**
+ * Lists the per-account storage directories ("accounts/<email>", "ext_accounts/<n>") as
+ * `Account(email, "com.google")`. When the accounts change, AccountDirectoryAccountsChangedHandler
+ * deletes every directory whose Account is not on the device. With a GmsCore account that never
+ * matched, so downloaded books and the account's local data were deleted on every accounts change.
+ */
+internal object AccountDirectoriesFingerprint : Fingerprint(
+    returnType = "Ljava/util/List;",
+    parameters = listOf(),
+    strings = listOf("com.google"),
+    filters = listOf(
+        methodCall(smali = "Ljava/io/File;->list()[Ljava/lang/String;"),
+        methodCall(smali = "Ljava/io/File;->isDirectory()Z"),
+        newInstance("Landroid/accounts/Account;"),
+    ),
+)
+
+/**
  * `CapabilityFetcherImpl.getCapabilityForAccount(Account, Boolean)`: asks GoogleAuthUtil whether the
  * account has a capability and handles an IOException from Google Play services. GmsCore answers
  * the re-signed app with a SecurityException ("missing google package permission for ACCOUNT"),
