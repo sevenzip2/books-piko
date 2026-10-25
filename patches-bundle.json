@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-10-25T02:41:06",
-  "description": "## v0.1.10\n\n* Support Play Books 2026.10.2.1 (392716) ([e0c2dfb](https://github.com/sevenzip2/books-piko/commit/e0c2dfb591382db405d5f9c0222201caf88972d0))\n",
-  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.10/patches-0.1.10.mpp",
-  "version": "0.1.10"
+  "created_at": "2026-10-25T03:11:45",
+  "description": "## v0.1.11\n\n* feat: Add attributed copy fallback for Play Books 0.1.11 ([2379ffc](https://github.com/sevenzip2/books-piko/commit/2379ffcc24f1a5724cd25649733d7434c11b1640))\n",
+  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.11/patches-0.1.11.mpp",
+  "version": "0.1.11"
 }
