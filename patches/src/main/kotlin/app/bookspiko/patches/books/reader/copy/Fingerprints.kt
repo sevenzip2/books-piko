@@ -42,3 +42,39 @@ internal object VolumeInfoEntityFingerprint : Fingerprint(
     returnType = "Ljava/lang/String;",
     filters = listOf(string("VolumeInfoEntity(title=")),
 )
+
+internal object VolumeFingerprint : Fingerprint(
+    name = "toString",
+    returnType = "Ljava/lang/String;",
+    filters = listOf(string("Volume(volumeId=")),
+)
+
+internal object VolumeInfoFingerprint : Fingerprint(
+    name = "toString",
+    returnType = "Ljava/lang/String;",
+    filters = listOf(string("VolumeInfo(title=")),
+)
+
+/** Contract used by BookMetadata's on-demand, offline lookup. */
+internal object LegacyVolumeColumnsFingerprint : Fingerprint(
+    name = "<clinit>",
+    filters = listOf(string("title"), string("creator"), string("sortable_creator"), string("authors")),
+)
+
+internal object LegacyVolumeRouteFingerprint : Fingerprint(
+    name = "<clinit>",
+    filters = listOf(string("accounts/volumes")),
+)
+
+internal object LegacyVolumeAuthorityFingerprint : Fingerprint(
+    name = "<clinit>",
+    filters = listOf(
+        string("content://com.google.android.apps.books"),
+        string("books-content://com.google.android.apps.books"),
+    ),
+)
+
+internal object LegacyVolumeQueryFingerprint : Fingerprint(
+    returnType = "Landroid/database/Cursor;",
+    filters = listOf(string("COUNT(*) AS _count"), string("view_volumes"), string("volumes")),
+)

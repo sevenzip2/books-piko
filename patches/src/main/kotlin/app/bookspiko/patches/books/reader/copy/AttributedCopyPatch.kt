@@ -29,6 +29,8 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
 private const val HOOK = "$EXTENSION_PACKAGE/copy/AttributedCopy;"
+private const val METADATA = "$EXTENSION_PACKAGE/copy/BookMetadata;"
+private const val CONTEXT = "Landroid/content/Context;"
 private const val STRING = "Ljava/lang/String;"
 private const val OBJECT = "Ljava/lang/Object;"
 private const val LIST = "Ljava/util/List;"
@@ -76,6 +78,40 @@ private fun bridge(
     owner.methods.add(method)
 }
 
+context(context: BytecodePatchContext)
+private fun captureMetadata(volume: Match, information: Match, hookName: String) {
+    val entity = volume.classDef
+    val info = information.classDef
+    val constructor = entity.methods.singleOrNull { it.name == "<init>" &&
+        it.parameterTypes.take(2).map { type -> type.toString() } == listOf(STRING, info.type) }
+        ?: throw PatchException("Book metadata constructor changed: ${entity.type}")
+    val infoConstructor = info.methods.singleOrNull { it.name == "<init>" &&
+        it.parameterTypes.take(3).map { type -> type.toString() } == listOf(STRING, LIST, STRING) }
+        ?: throw PatchException("Bibliographic metadata constructor changed: ${info.type}")
+    val id = constructor.parameterField(0, STRING)
+    val details = constructor.parameterField(1, info.type)
+    val title = infoConstructor.parameterField(0, STRING)
+    val authors = infoConstructor.parameterField(1, LIST)
+    listOf(id, details, title, authors).forEach { field ->
+        if (context.classDefBy(field.definingClass).fields.none { it.name == field.name &&
+                AccessFlags.PUBLIC.isSet(it.accessFlags) }) {
+            throw PatchException("Book metadata field is no longer public: $field")
+        }
+    }
+    bridge(hookName, listOf(OBJECT), "V", 5, """
+        check-cast p0, ${entity.type}
+        iget-object v0, p0, $id
+        iget-object v1, p0, $details
+        iget-object v2, v1, $title
+        iget-object v3, v1, $authors
+        invoke-static { v0, v2, v3 }, $HOOK->remember($STRING$STRING$LIST)V
+        return-void
+    """)
+    val returnIndex = constructor.instructions.indexOfLast { it.opcode == Opcode.RETURN_VOID }
+    if (returnIndex < 0) throw PatchException("Book metadata constructor has no return")
+    constructor.addInstructions(returnIndex, "invoke-static/range { p0 .. p0 }, $HOOK->$hookName($OBJECT)V")
+}
+
 @Suppress("unused")
 val attributedCopyPatch = bytecodePatch(
     name = "Attributed copy fallback",
@@ -87,6 +123,12 @@ val attributedCopyPatch = bytecodePatch(
     dependsOn(sharedExtensionPatch)
 
     execute {
+        // Do not silently query a different schema if the local BooksProvider contract changes.
+        LegacyVolumeColumnsFingerprint.unique()
+        LegacyVolumeRouteFingerprint.unique()
+        LegacyVolumeAuthorityFingerprint.unique()
+        LegacyVolumeQueryFingerprint.unique()
+
         val quota = CopyQuotaInfoFingerprint.unique().classDef
         val quotaConstructor = quota.methods.singleOrNull { it.name == "<init>" &&
             it.parameterTypes.map { type -> type.toString() } == listOf(STRING, "J", "J", "I") }
@@ -180,40 +222,8 @@ val attributedCopyPatch = bytecodePatch(
             check-cast v$quotaRegister, ${quota.type}
         """)
 
-        // Capture the book's own bibliographic metadata as the library materializes it.
-        val entity = InnerVolumeEntityFingerprint.unique().classDef
-        val info = VolumeInfoEntityFingerprint.unique().classDef
-        val entityConstructor = entity.methods.singleOrNull { it.name == "<init>" &&
-            it.parameterTypes.take(2).map { type -> type.toString() } == listOf(STRING, info.type) }
-            ?: throw PatchException("Book metadata constructor changed")
-        val infoConstructor = info.methods.singleOrNull { it.name == "<init>" &&
-            it.parameterTypes.take(3).map { type -> type.toString() } == listOf(STRING, LIST, STRING) }
-            ?: throw PatchException("Bibliographic metadata constructor changed")
-        val id = entityConstructor.parameterField(0, STRING)
-        val details = entityConstructor.parameterField(1, info.type)
-        val title = infoConstructor.parameterField(0, STRING)
-        val authors = infoConstructor.parameterField(1, LIST)
-        val url = infoConstructor.parameterField(2, STRING)
-        listOf(id, details, title, authors, url).forEach { field ->
-            if (classDefBy(field.definingClass).fields.none { it.name == field.name &&
-                    AccessFlags.PUBLIC.isSet(it.accessFlags) }) {
-                throw PatchException("Book metadata field is no longer public: $field")
-            }
-        }
-        bridge("rememberVolume", listOf(OBJECT), "V", 5, """
-            check-cast p0, ${entity.type}
-            iget-object v0, p0, $id
-            iget-object v1, p0, $details
-            iget-object v2, v1, $title
-            iget-object v3, v1, $authors
-            iget-object v1, v1, $url
-            invoke-static { v0, v2, v3, v1 }, $HOOK->remember($STRING$STRING$LIST$STRING)V
-            return-void
-        """)
-        val returnIndex = entityConstructor.instructions.indexOfLast { it.opcode == Opcode.RETURN_VOID }
-        if (returnIndex < 0) throw PatchException("Book metadata constructor has no return")
-        entityConstructor.addInstructions(returnIndex,
-            "invoke-static/range { p0 .. p0 }, $HOOK->rememberVolume($OBJECT)V")
+        captureMetadata(InnerVolumeEntityFingerprint.unique(), VolumeInfoEntityFingerprint.unique(), "rememberVolumeEntity")
+        captureMetadata(VolumeFingerprint.unique(), VolumeInfoFingerprint.unique(), "rememberVolume")
 
         val clipIndex = action.instructionMatches[0].index
         val clip = code[clipIndex] as FiveRegisterInstruction
@@ -224,17 +234,31 @@ val attributedCopyPatch = bytecodePatch(
             ?: throw PatchException("Copy action quota capture changed")
         val quotaValue = (quotaRead as OneRegisterInstruction).registerA
         val text = clip.registerD
-        nibble(quotaValue, text)
-        bridge("formatSelection", listOf(STRING, OBJECT), STRING, 4, """
+        val contextCall = code.singleOrNull { it.opcode == Opcode.INVOKE_VIRTUAL &&
+            ((it as ReferenceInstruction).reference as MethodReference).let { reference ->
+                reference.returnType == CONTEXT && reference.parameterTypes.isEmpty()
+            }
+        } ?: throw PatchException("Copy action's fragment context getter changed")
+        val contextGetter = (contextCall as ReferenceInstruction).reference as MethodReference
+        val fragment = (contextCall as FiveRegisterInstruction).registerC
+        if (classDefBy(contextGetter.definingClass).methods.none { it.name == contextGetter.name &&
+                it.returnType == CONTEXT && it.parameterTypes.isEmpty() && AccessFlags.PUBLIC.isSet(it.accessFlags) }) {
+            throw PatchException("Copy action's context getter is no longer public")
+        }
+        nibble(quotaValue, text, fragment)
+        bridge("formatSelection", listOf(STRING, OBJECT, OBJECT), STRING, 6, """
             check-cast p1, ${quota.type}
             iget-object v0, p1, $quotaId
             iget-boolean v1, p1, ${quota.type}->$MARKER:Z
-            invoke-static { p0, v0, v1 }, $HOOK->copyText($STRING${STRING}Z)$STRING
+            check-cast p2, ${contextGetter.definingClass}
+            invoke-virtual { p2 }, $contextGetter
+            move-result-object v2
+            invoke-static { v2, p0, v0, v1 }, $METADATA->copyText($CONTEXT$STRING${STRING}Z)$STRING
             move-result-object v0
             return-object v0
         """)
         action.method.addInstructions(clipIndex, """
-            invoke-static { v$text, v$quotaValue }, $HOOK->formatSelection($STRING$OBJECT)$STRING
+            invoke-static { v$text, v$quotaValue, v$fragment }, $HOOK->formatSelection($STRING$OBJECT$OBJECT)$STRING
             move-result-object v$text
         """)
     }
