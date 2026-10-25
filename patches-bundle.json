@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-10-21T11:31:17",
-  "description": "## v0.1.9\n\n* GmsCore support: stop deleting downloads when the accounts change ([f58ca26](https://github.com/sevenzip2/books-piko/commit/f58ca26538b3381dfa8c1eb0a18e4604ed9bd339))\n",
-  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.9/patches-0.1.9.mpp",
-  "version": "0.1.9"
+  "created_at": "2026-10-25T02:41:06",
+  "description": "## v0.1.10\n\n* Support Play Books 2026.10.2.1 (392716) ([e0c2dfb](https://github.com/sevenzip2/books-piko/commit/e0c2dfb591382db405d5f9c0222201caf88972d0))\n",
+  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.10/patches-0.1.10.mpp",
+  "version": "0.1.10"
 }
