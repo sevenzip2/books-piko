@@ -17,6 +17,20 @@ public final class AttributedCopy {
 
     private AttributedCopy() {}
 
+    public interface MetadataLookup {
+        Metadata find(String id);
+    }
+
+    public static final class Metadata {
+        public final String title;
+        public final List<?> authors;
+
+        public Metadata(String title, List<?> authors) {
+            this.title = title;
+            this.authors = authors;
+        }
+    }
+
     public static boolean shouldAttribute(long remaining, long allowed, int limitType) {
         return limitType != 2 && !(limitType == 1 && remaining > 0 && allowed > 0);
     }
@@ -25,9 +39,18 @@ public final class AttributedCopy {
         return attributed ? format(text, id) : text;
     }
 
-    public static synchronized void remember(String id, String title, List<?> authors, String detailUrl) {
-        if (id == null || id.isEmpty()) return;
-        StringBuilder source = new StringBuilder("- <").append(title == null || title.isEmpty() ? id : title)
+    public static String copyText(String text, String id, boolean attributed, MetadataLookup lookup) {
+        if (!attributed) return text;
+        if (lookup != null) {
+            Metadata metadata = lookup.find(id);
+            if (metadata != null) remember(id, metadata.title, metadata.authors);
+        }
+        return format(text, id);
+    }
+
+    public static synchronized void remember(String id, String title, List<?> authors) {
+        if (id == null || id.isEmpty() || title == null || title.trim().isEmpty()) return;
+        StringBuilder source = new StringBuilder("- <").append(title)
                 .append('>');
         if (authors != null && !authors.isEmpty()) {
             String separator = ", ";
@@ -38,20 +61,20 @@ public final class AttributedCopy {
             }
         }
         source.append(" - Google Play 북\n");
-        source.append(detailUrl == null || detailUrl.trim().isEmpty() ? readerUrl(id) : detailUrl);
+        source.append(detailUrl(id));
         SOURCES.put(id, source.toString());
     }
 
     public static synchronized String format(String text, String id) {
         if (id == null || id.isEmpty()) throw new IllegalArgumentException("Missing book ID for attribution");
         String source = SOURCES.get(id);
-        if (source == null) source = "- Google Play 북\n" + readerUrl(id);
+        if (source == null) source = "- Google Play 북\n" + detailUrl(id);
         return text + "\n\n" + source;
     }
 
-    private static String readerUrl(String id) {
+    private static String detailUrl(String id) {
         try {
-            return "https://play.google.com/books/reader?id=" + URLEncoder.encode(id, "UTF-8");
+            return "https://play.google.com/store/books/details?id=" + URLEncoder.encode(id, "UTF-8");
         } catch (UnsupportedEncodingException impossible) {
             throw new AssertionError(impossible);
         }
