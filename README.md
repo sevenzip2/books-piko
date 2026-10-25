@@ -16,6 +16,7 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
 |---|---|---|
 | GmsCore support | 켜짐 | 계정 조회, 토큰(GetToken), 계정 선택기만 GmsCore로 보냅니다. clearcut, phenotype 같은 나머지 Play 서비스 API는 설치된 Play 서비스를 그대로 씁니다. |
 | Custom reader font | 켜짐 | 리더 WebView의 글꼴 요청을 사용자 글꼴로 바꿉니다. Play 북 **설정 → Ebook reading → 사용자 글꼴**에서 글꼴을 고릅니다. |
+| Attributed copy fallback | 켜짐 | 복사가 허용되면 본문만 복사합니다. 복사 금지·한도 소진 상태에서는 책 제목·저자·링크를 붙여 선택한 본문을 복사합니다. |
 | GmsCore account type (extended) | 꺼짐 | 실험 기능입니다. 앱 안에 남아 있는 `Account(name, "com.google")` 생성(업로드, 컬렉션, 고객센터 페이지, 백그라운드 동기화)도 GmsCore 계정 타입으로 바꿉니다. |
 
 ### GmsCore support 옵션
@@ -28,6 +29,19 @@ Play 북이 업데이트돼 코드 의미가 바뀌면 엉뚱한 곳을 고치�
 
 - `fontSettingsLauncherShortcut` (기본값 꺼짐): 설정 화면 항목과 별도로 런처에 "Books 글꼴" 아이콘도 추가합니다.
 - `bundledFontPath` (선택): 패치할 때 APK에 넣을 TTF/OTF 파일 경로입니다. 기기에서 글꼴을 고르기 전까지 이 글꼴을 씁니다.
+
+### Attributed copy fallback
+
+**Attributed copy fallback**은 기본으로 켜져 있으며, 리더의 기존 **복사** 메뉴가 다음처럼 동작합니다.
+
+- 원래 복사가 가능한 상태: 출처 문구 없이 본문만 복사합니다. 제한된 복사 한도가 있는 책은 기존과 같이 한도를 차감합니다.
+- 복사 금지 또는 한도 소진 상태: 선택한 본문 뒤에 `- <책 제목>, 저자 - Google Play 북`과 도서 링크를 붙여 복사합니다.
+- 복사 허용 정보가 아직 없을 때도 출처를 붙입니다. 도서 메타데이터를 읽지 못하면 Play 북 리더 링크를 출처로 남깁니다.
+
+선택한 텍스트를 복사하는 기능입니다. 이미지·스캔 페이지에서 텍스트를 추출하지는 않습니다.
+출처 정보는 앱이 읽은 도서 메타데이터를 사용하며, 선택한 본문은 따로 저장하지 않습니다.
+
+출력 형식과 분기 테스트는 JDK가 있는 환경에서 `bash tests/test-attributed-copy.sh`로 실행할 수 있습니다.
 
 ## 사용 방법
 
