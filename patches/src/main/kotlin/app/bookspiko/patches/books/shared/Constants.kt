@@ -31,7 +31,7 @@ object Constants {
             // cannot compare the names as numbers and sorts them as text: "2026.9.4.2 (…)" sorts
             // above "2026.9.18.0 (…)" and Morphe Manager would recommend the older one. The target
             // without a version below still lets other versions be patched.
-            AppTarget(version = "2026.9.18.0 (389836)", versionCode = 389836, minSdk = 32),
+            AppTarget(version = "2026.10.2.1 (392716)", versionCode = 392716, minSdk = 32),
             AppTarget(version = null, versionCodes = null, isExperimental = true),
         ),
     )
