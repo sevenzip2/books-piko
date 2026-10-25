@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-10-25T03:11:45",
-  "description": "## v0.1.11\n\n* feat: Add attributed copy fallback for Play Books 0.1.11 ([2379ffc](https://github.com/sevenzip2/books-piko/commit/2379ffcc24f1a5724cd25649733d7434c11b1640))\n",
-  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.11/patches-0.1.11.mpp",
-  "version": "0.1.11"
+  "created_at": "2026-10-25T03:28:48",
+  "description": "## v0.1.12\n\n* fix: Restore book titles, authors and detail links in copied excerpts (#5) ([2bdf005](https://github.com/sevenzip2/books-piko/commit/2bdf005c4654d33999e9e3e7d9d0c42511a38825))\n",
+  "download_url": "https://github.com/sevenzip2/books-piko/releases/download/v0.1.12/patches-0.1.12.mpp",
+  "version": "0.1.12"
 }
